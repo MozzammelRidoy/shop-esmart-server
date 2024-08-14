@@ -1,5 +1,4 @@
-
-
+// all product load. 
 export const getAllProducts = (productCollection) => {
   return async (req, res) => {
    
@@ -7,6 +6,8 @@ export const getAllProducts = (productCollection) => {
      res.send(cursor);
   };
 };
+
+
 
 
 
