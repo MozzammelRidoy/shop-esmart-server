@@ -1,15 +1,21 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
+
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import { getAllProducts } from "./modules/products.js";
 import {
+  deleteUserByID,
   getAllAdmin,
   getAllUsers,
   patchStoreUserLastLoginTime,
+  patchStoreUserLastLogOutTime,
   postSingleUser,
 } from "./modules/users.js";
-import axios from "axios";
+import cookieParser from "cookie-parser";
+import { jwtTokenClear } from "./modules/jwt.js";
+import { googleCaptchaVerify } from "./modules/module.js";
+import { limiter } from "./modules/middlewares.js";
 
 var app = express();
 var port = process.env.PORT || 5000;
@@ -18,11 +24,15 @@ var port = process.env.PORT || 5000;
 app.use(
   cors({
     origin: ["http://localhost:5173", "https://shopesmart-51ca8.web.app"],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials : true
   })
 );
 app.use(express.json());
+app.use(cookieParser());
 
-// our middleware
+
+
 
 // mongodb start here
 // online
@@ -47,35 +57,32 @@ async function run() {
     const productsCollection = client.db("shopEsmartDb").collection("products");
     const usersCollection = client.db("shopEsmartDb").collection("users");
 
+    // jwt json web token releted api  
+    app.post('/logout', jwtTokenClear()); 
+
+
     //products releted api
     app.get("/products", getAllProducts(productsCollection));
 
     //users releted api
     app.get("/users", getAllUsers(usersCollection));
     app.get("/users/admin", getAllAdmin(usersCollection));
-    app.post("/users", postSingleUser(usersCollection));
-    app.patch("/users", patchStoreUserLastLoginTime(usersCollection));
+    app.post("/users",limiter, postSingleUser(usersCollection));
+    app.patch("/users/login", limiter, patchStoreUserLastLoginTime(usersCollection));
+    app.patch("/users/logout", patchStoreUserLastLogOutTime(usersCollection));
+    app.delete("/users/:id", deleteUserByID(usersCollection));
+
+    // for mongodb code customize
+    app.get("/custome", async (req, res) => {
+     
+    });
+
+    
 
     // captcha releted api
-    app.post("/captcha/verify", async (req, res) => {
-      const { token } = req.body;
-      if (!token) {
-        return res.status(400).send({ message: "Captcha Token is Required" });
-      }
-      try {
-        const response = await axios.post(
-          `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.GOOGLE_RECAPTCHA_SECRET_KEY_V2}&response=${token}`
-        );
+    app.post("/captcha/verify", googleCaptchaVerify());
 
-        if (response.data.success) {
-          res.send(response.data);
-        } else {
-          res.status(400).send({ error: "Captcha Varification Failed!" });
-        }
-      } catch (err) {
-        res.status(500).send({ error: "Captcha Varification Failed!" });
-      }
-    });
+
 
     app.get("/product/:id", async (req, res) => {
       const id = req.params.id;
