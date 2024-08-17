@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 // user token verify
 export const verifyToken = async (req, res, next) => {
   const token = req?.cookies?.token;
+
   if (!token) {
     return res.status(401).send({ message: "Unauthorized Access" });
   }
@@ -15,6 +16,7 @@ export const verifyToken = async (req, res, next) => {
         return res.status(401).send({ message: "Unauthorized Access" });
       }
       req.user = decoded;
+     
       next();
     });
   } catch (err) {
@@ -22,42 +24,50 @@ export const verifyToken = async (req, res, next) => {
   }
 };
 
-// user type Manager Check 
-export const isManager = async(req, res, next) => {
-    if(req.user.type !== 'manager'){
-        return res.status(405).send({ message: "Method Not Allowed" });
-    }
-    next();
-}
+// user type Manager Check
+export const isManager = async (req, res, next) => {
+  if (req.user.type !== "manager") {
+    return res.status(405).send({ message: "Method Not Allowed" });
+  }
+  next();
+};
 
 //user type admin check
-export const isAdmin = async(req, res, next) => {
-    if(req.user.type !== 'admin'){
-        return res.status(405).send({ message: "Method Not Allowed" });
-    }
-    next();
-}
+export const isAdmin = async (req, res, next) => {
+  if (req.user.type !== "admin") {
+    return res.status(405).send({ message: "Method Not Allowed" });
+  }
+  next();
+};
 
 // user type moderator check
-export const isModerator = async(req, res, next) => {
-    if(req.user.type !== 'moderator'){
-        return res.status(405).send({ message: "Method Not Allowed" });
-    }
-    next();
-}
+export const isModerator = async (req, res, next) => {
+  if (req.user.type !== "moderator") {
+    return res.status(405).send({ message: "Method Not Allowed" });
+  }
+  next();
+};
 
-// user type user check and user access block 
-export const isUserBlocked = async(req, res, next) => {
-    if(req.user.type === 'user'){
-        return res.status(405).send({ message: "Method Not Allowed" });
-    }
-    next();
-}
+// user type user check and user access block
+export const isUserBlocked = async (req, res, next) => {
+  if (req.user.type === "user") {
+    return res.status(405).send({ message: "Method Not Allowed" });
+  }
+  next();
+};
+
+// user baned
+export const isBaned = (req, res, next) => {
+  if (req.user.isBaned) {
+    return res.status(423).send({ message: "Access Locked" });
+  }
+  next();
+};
 
 // login limiter
 export const limiter = rateLimit({
-    windowMs : 5 * 60 * 100, 
-    limit : 10,
-    standardHeaders : 'draft-7',
-    legacyHeaders : false
-})
+  windowMs: 5 * 60 * 100,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+});

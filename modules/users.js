@@ -44,16 +44,32 @@ export const getAllAdmin = (usersCollection) => {
 export const postSingleUser = (usersCollection) => {
   return async (req, res) => {
     const { email, type, isBaned } = req.body;
-    const userToken = { email: email, type: type, isBaned: isBaned };
+    const newUserToken = { email: email, type: type, isBaned: isBaned };
 
     const newUser = req.body;
 
     const query = { email: newUser.email };
 
     const alreadyExists = await usersCollection.findOne(query);
-    const token = jwtTokenCreate(userToken);
-    if (alreadyExists){
-      await usersCollection.updateOne(query, {$set : {activity : true}}, {upsert : true}); 
+
+    if (alreadyExists) {
+      const alreadyExistsUserToken = {
+        email: newUser.email,
+        type: alreadyExists.type,
+        isBaned: alreadyExists.isBaned,
+      };
+      
+      const updateDoc = {
+        $set: {
+          lastSignInTime: newUser.lastSignInTime,
+          activity: newUser.activity,
+          type: alreadyExists.type,
+          isBaned: alreadyExists.isBaned,
+        },
+      };
+      const token = jwtTokenCreate(alreadyExistsUserToken);
+
+      await usersCollection.updateOne(query, updateDoc, { upsert: true });
       return res
         .cookie("token", token, {
           httpOnly: true,
@@ -61,8 +77,10 @@ export const postSingleUser = (usersCollection) => {
           sameSite: "none",
         })
         .status(201)
-        .send({ message: "user already exists" });}
+        .send({ message: "user already exists" });
+    }
 
+    const token = jwtTokenCreate(newUserToken);
     const result = await usersCollection.insertOne(newUser);
     res
       .cookie("token", token, {
@@ -157,3 +175,62 @@ export const deleteUserByID = (usersCollection) => {
     res.send(result);
   };
 };
+
+
+// user type check 
+export const getUserTypeCheck = (usersCollection) => {
+  return async(req, res) => {
+    const {email} = req.body;
+    
+    const query = {email : email}; 
+    
+    const user = await usersCollection.findOne(query); 
+    if(!user){
+      return res.status(401).send({message : "user not found"})
+    }
+
+    const type = user.type; 
+    const isBaned = user.isBaned; 
+   return res.status(200).send({type : type, isBaned : isBaned})
+  }
+}
+
+// user role / type update || manager, admin, moderator or user
+export const patchUserTypeUpdate = (usersCollection) => {
+  return async(req, res) => {
+    const {email, type} = req.body; 
+    
+    const query = {email : email}
+    const updateDoc = {
+      $set : {type : type }
+    }
+    const options = {upsert : true}
+    const user = await usersCollection.updateOne(query, updateDoc, options)
+    if(user.modifiedCount === 0){
+      return res.send({message : 'Change failed', success : false})
+    }
+    if(user.modifiedCount){
+      return res.send({success : true});
+    }
+  }
+}
+
+//user access update , access or banned
+export const patchUserAccessUpdate = (usersCollection) => {
+  return async(req, res) => {
+    const {email, isBaned} = req.body; 
+    
+    const query = {email : email}
+    const updateDoc = {
+      $set : {isBaned : isBaned }
+    }
+    const options = {upsert : true}
+    const user = await usersCollection.updateOne(query, updateDoc, options)
+    if(user.modifiedCount === 0){
+      return res.send({message : 'Ban failed', success : false})
+    }
+    if(user.modifiedCount){
+      return res.send({success : true});
+    }
+  }
+}

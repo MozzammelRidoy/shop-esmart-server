@@ -8,14 +8,18 @@ import {
   deleteUserByID,
   getAllAdmin,
   getAllUsers,
+  getUserTypeCheck,
   patchStoreUserLastLoginTime,
   patchStoreUserLastLogOutTime,
+  patchUserAccessUpdate,
+  patchUserTypeUpdate,
   postSingleUser,
 } from "./modules/users.js";
 import cookieParser from "cookie-parser";
 import { jwtTokenClear } from "./modules/jwt.js";
 import { googleCaptchaVerify } from "./modules/module.js";
-import { limiter } from "./modules/middlewares.js";
+import { isBaned, limiter, verifyToken } from "./modules/middlewares.js";
+import { deleteCategoryOne, getAllCategories, postNewCategories, putCategoryUpdate } from "./modules/categories.js";
 
 var app = express();
 var port = process.env.PORT || 5000;
@@ -56,6 +60,7 @@ async function run() {
 
     const productsCollection = client.db("shopEsmartDb").collection("products");
     const usersCollection = client.db("shopEsmartDb").collection("users");
+    const categoriesCollection = client.db("shopEsmartDb").collection("categories");
 
     // jwt json web token releted api  
     app.post('/logout', jwtTokenClear()); 
@@ -64,13 +69,27 @@ async function run() {
     //products releted api
     app.get("/products", getAllProducts(productsCollection));
 
+
+    //categories releted api
+    app.get('/categories', verifyToken, isBaned, getAllCategories(categoriesCollection));
+    app.post("/categories/addnew", verifyToken, isBaned, postNewCategories(categoriesCollection) );
+    app.put('/categories/update/:id', verifyToken, isBaned, putCategoryUpdate(categoriesCollection));
+    app.delete('/categories/delete/:id', verifyToken, isBaned, deleteCategoryOne(categoriesCollection));
+    
+
+
     //users releted api
-    app.get("/users", getAllUsers(usersCollection));
-    app.get("/users/admin", getAllAdmin(usersCollection));
+    app.get("/users", verifyToken, isBaned, getAllUsers(usersCollection));
+    app.get("/users/admin", verifyToken, isBaned, getAllAdmin(usersCollection));
     app.post("/users",limiter, postSingleUser(usersCollection));
     app.patch("/users/login", limiter, patchStoreUserLastLoginTime(usersCollection));
     app.patch("/users/logout", patchStoreUserLastLogOutTime(usersCollection));
     app.delete("/users/:id", deleteUserByID(usersCollection));
+    app.post("/users/type", verifyToken, isBaned, getUserTypeCheck(usersCollection));
+    app.patch('/users/type/update', verifyToken, isBaned, patchUserTypeUpdate(usersCollection) );
+    app.patch('/users/access/update', verifyToken, isBaned, patchUserAccessUpdate(usersCollection) );
+
+
 
     // for mongodb code customize
     app.get("/custome", async (req, res) => {
