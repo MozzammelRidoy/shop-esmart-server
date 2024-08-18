@@ -3,7 +3,7 @@ import cors from "cors";
 import "dotenv/config";
 
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
-import { getAllProducts } from "./modules/products.js";
+import { getAllProducts, postAddNewProduct } from "./modules/products.js";
 import {
   deleteUserByID,
   getAllAdmin,
@@ -68,12 +68,14 @@ async function run() {
 
     //products releted api
     app.get("/products", getAllProducts(productsCollection));
+    app.post("/products/addnew",  postAddNewProduct(productsCollection) );
+
 
 
     //categories releted api
-    app.get('/categories', verifyToken, isBaned, getAllCategories(categoriesCollection));
+    app.get('/categories', getAllCategories(categoriesCollection));
     app.post("/categories/addnew", verifyToken, isBaned, postNewCategories(categoriesCollection) );
-    app.put('/categories/update/:id', verifyToken, isBaned, putCategoryUpdate(categoriesCollection));
+    app.put('/categories/update/:id', verifyToken, isBaned, putCategoryUpdate(categoriesCollection, productsCollection));
     app.delete('/categories/delete/:id', verifyToken, isBaned, deleteCategoryOne(categoriesCollection));
     
 
