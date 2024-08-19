@@ -11,8 +11,19 @@ export const getAllProducts = (productCollection) => {
 export const postAddNewProduct = (productCollection) => {
   return async(req, res) => {
     const newProduct = req.body; 
-    console.log(newProduct); 
-    res.send({message : 'data asche'})
+    if(!newProduct){
+      return res.status(404).send({message : 'Failed to Add new Product'})
+    }
+    try{
+      const result = await productCollection.insertOne(newProduct); 
+      if(!result.insertedId){
+        return res.status(404).send({message : 'Failed to Add new Product'})
+      }
+      return res.send(result)
+    }
+    catch(err){
+      return res.status(404).send({message : 'Failed to Add new Product' , err})
+    }
 
   }
 }
