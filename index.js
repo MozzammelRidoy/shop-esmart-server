@@ -3,7 +3,7 @@ import cors from "cors";
 import "dotenv/config";
 
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
-import { getAllProducts, postAddNewProduct } from "./modules/products.js";
+import { deleteProduct, getAllProductReadForAdmin, getAllProducts, getSigleProductReadForAdmin,  getSignleProductRead,  postAddNewProduct, putUpdateProduct } from "./modules/products.js";
 import {
   deleteUserByID,
   getAllAdmin,
@@ -67,9 +67,15 @@ async function run() {
 
 
     //products releted api
-    app.get("/products", getAllProducts(productsCollection));
-    app.post("/products/addnew",  postAddNewProduct(productsCollection) );
-
+    
+    app.get('/products', getAllProducts(productsCollection));
+    app.get('/products/admin',verifyToken, isBaned, getAllProductReadForAdmin(productsCollection));
+    app.get('/products/:id', getSignleProductRead(productsCollection) );
+    app.get('/products/admin/:id', verifyToken, isBaned, getSigleProductReadForAdmin(productsCollection));
+    app.post('/products/addnew', verifyToken, isBaned, postAddNewProduct(productsCollection) );
+    app.put('/products/update', verifyToken, isBaned, putUpdateProduct(productsCollection));
+    app.delete('/products/delete/:id', verifyToken, isBaned, deleteProduct(productsCollection));
+    
 
 
     //categories releted api
@@ -105,12 +111,12 @@ async function run() {
 
 
 
-    app.get("/product/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await productsCollection.findOne(query);
-      res.send(result);
-    });
+    // app.get("/product/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: new ObjectId(id) };
+    //   const result = await productsCollection.findOne(query);
+    //   res.send(result);
+    // });
 
     app.get("/productCount", async (req, res) => {
       const count = await productsCollection.estimatedDocumentCount();
