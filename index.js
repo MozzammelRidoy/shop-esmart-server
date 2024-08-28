@@ -17,7 +17,7 @@ import {
 } from "./modules/users.js";
 import cookieParser from "cookie-parser";
 import { jwtTokenClear } from "./modules/jwt.js";
-import { googleCaptchaVerify } from "./modules/module.js";
+import { deleteImageFromCloudinary, googleCaptchaVerify } from "./modules/module.js";
 import { isBaned, limiter, verifyToken } from "./modules/middlewares.js";
 import { deleteCategoryOne, getAllCategories, postNewCategories, putCategoryUpdate } from "./modules/categories.js";
 
@@ -73,7 +73,7 @@ async function run() {
     app.get('/products/:id', getSignleProductRead(productsCollection) );
     app.get('/products/admin/:id', verifyToken, isBaned, getSigleProductReadForAdmin(productsCollection));
     app.post('/products/addnew', verifyToken, isBaned, postAddNewProduct(productsCollection) );
-    app.put('/products/update', verifyToken, isBaned, putUpdateProduct(productsCollection));
+    app.put('/products/update/:id', verifyToken, isBaned, putUpdateProduct(productsCollection));
     app.delete('/products/delete/:id', verifyToken, isBaned, deleteProduct(productsCollection));
     
 
@@ -108,6 +108,10 @@ async function run() {
 
     // captcha releted api
     app.post("/captcha/verify", googleCaptchaVerify());
+
+
+    //cloudinary releted api
+    app.post('/delete-image', deleteImageFromCloudinary())
 
 
 
