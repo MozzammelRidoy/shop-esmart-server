@@ -27,7 +27,7 @@ export const verifyToken = async (req, res, next) => {
 // user type Manager Check
 export const isManager = async (req, res, next) => {
   if (req.user.type !== "manager") {
-    return res.status(405).send({ message: "Method Not Allowed" });
+    return res.status(405).send({ message: "Not Allowed" });
   }
   next();
 };
@@ -35,7 +35,7 @@ export const isManager = async (req, res, next) => {
 //user type admin check
 export const isAdmin = async (req, res, next) => {
   if (req.user.type !== "admin") {
-    return res.status(405).send({ message: "Method Not Allowed" });
+    return res.status(405).send({ message: "Not Allowed" });
   }
   next();
 };
@@ -43,7 +43,7 @@ export const isAdmin = async (req, res, next) => {
 // user type moderator check
 export const isModerator = async (req, res, next) => {
   if (req.user.type !== "moderator") {
-    return res.status(405).send({ message: "Method Not Allowed" });
+    return res.status(405).send({ message: "Not Allowed" });
   }
   next();
 };
@@ -51,7 +51,7 @@ export const isModerator = async (req, res, next) => {
 // user type user check and user access block
 export const isUserBlocked = async (req, res, next) => {
   if (req.user.type === "user") {
-    return res.status(405).send({ message: "Method Not Allowed" });
+    return res.status(405).send({ message: "Not Allowed" });
   }
   next();
 };
@@ -63,6 +63,24 @@ export const isBaned = (req, res, next) => {
   }
   next();
 };
+
+//admin and manager check
+export const isAdminOrManager = (req, res, next) => {
+  if(req.user.type === 'admin' || req.user.type === 'manager'){
+    return next();
+  }
+  return res.status(405).send({ message: "Not Allowed" });
+}
+
+
+//any admin role check
+export const isAnyAdmin = (req, res, next) => {
+    if(req.user.type === 'manager' || req.user.type === 'admin' || req.user.type === 'moderator'){
+     return next()
+    }
+    return res.status(405).send({ message: "Not Allowed" });
+}
+
 
 // login limiter
 export const limiter = rateLimit({

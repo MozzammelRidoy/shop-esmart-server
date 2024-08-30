@@ -18,8 +18,9 @@ import {
 import cookieParser from "cookie-parser";
 import { jwtTokenClear } from "./modules/jwt.js";
 import { deleteImageFromCloudinary, googleCaptchaVerify } from "./modules/module.js";
-import { isBaned, limiter, verifyToken } from "./modules/middlewares.js";
+import { isAdminOrManager, isAnyAdmin, isBaned, isUserBlocked, limiter, verifyToken } from "./modules/middlewares.js";
 import { deleteCategoryOne, getAllCategories, postNewCategories, putCategoryUpdate } from "./modules/categories.js";
+import { getBannerImage, postBannerUpload, putBannerImages } from "./modules/banner.js";
 
 var app = express();
 var port = process.env.PORT || 5000;
@@ -61,6 +62,7 @@ async function run() {
     const productsCollection = client.db("shopEsmartDb").collection("products");
     const usersCollection = client.db("shopEsmartDb").collection("users");
     const categoriesCollection = client.db("shopEsmartDb").collection("categories");
+    const bannersCollection = client.db("shopEsmartDb").collection("banners");
 
     // jwt json web token releted api  
     app.post('/logout', jwtTokenClear()); 
@@ -69,33 +71,41 @@ async function run() {
     //products releted api
     
     app.get('/products', getAllProducts(productsCollection));
-    app.get('/products/admin',verifyToken, isBaned, getAllProductReadForAdmin(productsCollection));
+    app.get('/products/admin',verifyToken, isBaned, isAnyAdmin, getAllProductReadForAdmin(productsCollection));
     app.get('/products/:id', getSignleProductRead(productsCollection) );
-    app.get('/products/admin/:id', verifyToken, isBaned, getSigleProductReadForAdmin(productsCollection));
-    app.post('/products/addnew', verifyToken, isBaned, postAddNewProduct(productsCollection) );
-    app.put('/products/update/:id', verifyToken, isBaned, putUpdateProduct(productsCollection));
-    app.delete('/products/delete/:id', verifyToken, isBaned, deleteProduct(productsCollection));
+    app.get('/products/admin/:id', verifyToken, isBaned, isAnyAdmin, getSigleProductReadForAdmin(productsCollection));
+    app.post('/products/addnew', verifyToken, isBaned, isAnyAdmin, postAddNewProduct(productsCollection) );
+    app.put('/products/update/:id', verifyToken, isBaned, isAnyAdmin, putUpdateProduct(productsCollection));
+    app.delete('/products/delete/:id', verifyToken, isBaned, isAnyAdmin, deleteProduct(productsCollection));
     
 
 
     //categories releted api
     app.get('/categories', getAllCategories(categoriesCollection));
-    app.post("/categories/addnew", verifyToken, isBaned, postNewCategories(categoriesCollection) );
-    app.put('/categories/update/:id', verifyToken, isBaned, putCategoryUpdate(categoriesCollection, productsCollection));
-    app.delete('/categories/delete/:id', verifyToken, isBaned, deleteCategoryOne(categoriesCollection));
+    app.post("/categories/addnew", verifyToken, isBaned, isAnyAdmin, postNewCategories(categoriesCollection) );
+    app.put('/categories/update/:id', verifyToken, isBaned, isAnyAdmin, putCategoryUpdate(categoriesCollection, productsCollection));
+    app.delete('/categories/delete/:id', verifyToken, isBaned, isAnyAdmin, deleteCategoryOne(categoriesCollection, productsCollection));
+
+    
+    //banner Releted api
+    app.get('/banners', getBannerImage(bannersCollection)) ;
+    app.post('/site-settings/banners', verifyToken, isBaned, isUserBlocked, isAnyAdmin, postBannerUpload(bannersCollection)); 
+    app.put('/site-settings/banners/:id', verifyToken, isBaned, isUserBlocked, isAnyAdmin, putBannerImages(bannersCollection)); 
+   
+    
     
 
 
     //users releted api
-    app.get("/users", verifyToken, isBaned, getAllUsers(usersCollection));
-    app.get("/users/admin", verifyToken, isBaned, getAllAdmin(usersCollection));
+    app.get("/users", verifyToken, isBaned, isUserBlocked, isAnyAdmin, getAllUsers(usersCollection));
+    app.get("/users/admin", verifyToken, isBaned, isUserBlocked, isAnyAdmin, getAllAdmin(usersCollection));
     app.post("/users",limiter, postSingleUser(usersCollection));
     app.patch("/users/login", limiter, patchStoreUserLastLoginTime(usersCollection));
     app.patch("/users/logout", patchStoreUserLastLogOutTime(usersCollection));
-    app.delete("/users/:id", deleteUserByID(usersCollection));
+    app.delete("/users/:id",verifyToken, isBaned, isUserBlocked, isAdminOrManager, deleteUserByID(usersCollection));
     app.post("/users/type", verifyToken, isBaned, getUserTypeCheck(usersCollection));
-    app.patch('/users/type/update', verifyToken, isBaned, patchUserTypeUpdate(usersCollection) );
-    app.patch('/users/access/update', verifyToken, isBaned, patchUserAccessUpdate(usersCollection) );
+    app.patch('/users/type/update', verifyToken, isBaned, isUserBlocked, isAdminOrManager, patchUserTypeUpdate(usersCollection) );
+    app.patch('/users/access/update', verifyToken, isBaned, isUserBlocked, isAnyAdmin, patchUserAccessUpdate(usersCollection) );
 
 
 
@@ -112,6 +122,7 @@ async function run() {
 
     //cloudinary releted api
     app.post('/delete-image', deleteImageFromCloudinary())
+    app.post('/site-settings/banner/delete', deleteImageFromCloudinary())
 
 
 
