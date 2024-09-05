@@ -3,19 +3,61 @@ import { ObjectId } from "mongodb";
 // all product read for public.
 export const getAllProducts = (productCollection) => {
   return async (req, res) => {
-    const query = {};
+    const {
+      category = "all",
+      page = 0,
+      size = 10,
+      min = 0,
+      max = 999999,
+      sort = "date_asc",
+    } = req.query;
+
+    let query = {
+      finalPrice: { $gte: Number(min), $lte: Number(max) },
+    };
+    if (category && category !== "all") {
+      query.productCategory = { $in : [category]};
+    }
+
+    let sortOption = {};
+
+    if (sort === "price_asc") {
+      sortOption.finalPrice = 1;
+    } else if (sort === "price_desc") {
+      sortOption.finalPrice = -1;
+    } else if (sort === "date_asc") {
+      sortOption.createdAt = 1;
+    } else if (sort === "date_desc") {
+      sortOption.createdAt = -1;
+    } else if (sort === "alpha_asc") {
+      sortOption.productName = 1;
+    } else if (sort === "alpha_desc") {
+      sortOption.productName = -1;
+    }
+    const options = {
+      projection: { _id : 1, productName : 1, discountPercent : 1, images : 1, finalPrice : 1, ratings : 1, ratingsCount : 1 },
+    };
     try {
-      const options = {
-        projection: { costPrice: 0, profit: 0 },
-      };
-      // more operation integrate. like search, projection etc
-      const producs = await productCollection.find(query, options).toArray();
-      res.send(producs);
+      const products = await productCollection
+        .find(query, options)
+        .sort(sortOption)
+        .skip(Number(page) * Number(size))
+        .limit(Number(size))
+        .toArray();
+      const totalResults = await productCollection.countDocuments(query);
+
+      res.send({
+        products,
+        numberOfPage: Math.ceil(totalResults / size),
+        totalResults: totalResults,
+      });
     } catch (err) {
       res.status(500).send({ message: "Failed to retrieve products", err });
     }
   };
 };
+
+
 
 //read single product for public
 export const getSignleProductRead = (productCollection) => {
@@ -94,8 +136,8 @@ export const postAddNewProduct = (productCollection) => {
 // update a product
 export const putUpdateProduct = (productCollection) => {
   return async (req, res) => {
-    const id = req.params.id; 
-    const query = {_id: new ObjectId(id)};
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
     const productUpdateValue = req.body;
     const updateDoc = {
       $set: {
@@ -111,7 +153,7 @@ export const putUpdateProduct = (productCollection) => {
         updateDoc,
         options
       );
-     
+
       return res.send(updateProductResult);
     } catch (err) {
       return res
