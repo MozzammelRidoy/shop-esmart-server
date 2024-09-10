@@ -8,12 +8,14 @@ import {
   deleteUserByID,
   getAllAdmin,
   getAllUsers,
+  getUserInformation,
   getUserTypeCheck,
   patchStoreUserLastLoginTime,
   patchStoreUserLastLogOutTime,
   patchUserAccessUpdate,
   patchUserTypeUpdate,
   postSingleUser,
+  putUserInfoUpdate,
 } from "./modules/users.js";
 import cookieParser from "cookie-parser";
 import { jwtTokenClear } from "./modules/jwt.js";
@@ -21,6 +23,8 @@ import { deleteImageFromCloudinary, googleCaptchaVerify } from "./modules/module
 import { isAdminOrManager, isAnyAdmin, isBaned, isUserBlocked, limiter, verifyToken } from "./modules/middlewares.js";
 import { deleteCategoryOne, getAllCategories, postNewCategories, putCategoryUpdate } from "./modules/categories.js";
 import { getBannerImage, postBannerUpload, putBannerImages } from "./modules/banner.js";
+import { deleteOneCart, getAllCartsRead, postNewAddToCarts, updateAddToCarts } from "./modules/carts.js";
+import { getALLOrdersRead, postOrdersSubmit } from "./modules/orders.js";
 
 var app = express();
 var port = process.env.PORT || 5000;
@@ -63,6 +67,8 @@ async function run() {
     const usersCollection = client.db("shopEsmartDb").collection("users");
     const categoriesCollection = client.db("shopEsmartDb").collection("categories");
     const bannersCollection = client.db("shopEsmartDb").collection("banners");
+    const cartsCollection = client.db("shopEsmartDb").collection("carts");
+    const ordersCollection = client.db("shopEsmartDb").collection("orders");
 
     // jwt json web token releted api  
     app.post('/logout', jwtTokenClear()); 
@@ -97,16 +103,30 @@ async function run() {
 
 
     //users releted api
+    app.get("/usersInfo", verifyToken, isBaned, getUserInformation(usersCollection));
     app.get("/users", verifyToken, isBaned, isUserBlocked, isAnyAdmin, getAllUsers(usersCollection));
     app.get("/users/admin", verifyToken, isBaned, isUserBlocked, isAnyAdmin, getAllAdmin(usersCollection));
     app.post("/users",limiter, postSingleUser(usersCollection));
     app.patch("/users/login", limiter, patchStoreUserLastLoginTime(usersCollection));
     app.patch("/users/logout", patchStoreUserLastLogOutTime(usersCollection));
+    app.put("/usersInfo", verifyToken, isBaned, putUserInfoUpdate(usersCollection));
     app.delete("/users/:id",verifyToken, isBaned, isUserBlocked, isAdminOrManager, deleteUserByID(usersCollection));
     app.post("/users/type", verifyToken, isBaned, getUserTypeCheck(usersCollection));
     app.patch('/users/type/update', verifyToken, isBaned, isUserBlocked, isAdminOrManager, patchUserTypeUpdate(usersCollection) );
     app.patch('/users/access/update', verifyToken, isBaned, isUserBlocked, isAnyAdmin, patchUserAccessUpdate(usersCollection) );
 
+
+    //carts releted api 
+    app.get('/carts', verifyToken, isBaned, getAllCartsRead(cartsCollection)); 
+    app.post('/carts', verifyToken, isBaned, postNewAddToCarts(cartsCollection)); 
+    app.patch('/carts/:id', verifyToken, isBaned, updateAddToCarts(cartsCollection)); 
+    app.delete('/carts/:id', verifyToken, isBaned, deleteOneCart(cartsCollection)); 
+
+
+    
+    //orders releted api 
+    app.get('/orders', verifyToken, isBaned, getALLOrdersRead(ordersCollection)); 
+    app.post('/orders', verifyToken, isBaned, postOrdersSubmit(ordersCollection)); 
 
 
     // for mongodb code customize
@@ -121,8 +141,8 @@ async function run() {
 
 
     //cloudinary releted api
-    app.post('/delete-image', deleteImageFromCloudinary())
-    app.post('/site-settings/banner/delete', deleteImageFromCloudinary())
+    app.post('/delete-image',verifyToken, isBaned, deleteImageFromCloudinary())
+    app.post('/site-settings/banner/delete',verifyToken, isBaned, isUserBlocked, deleteImageFromCloudinary())
 
 
 

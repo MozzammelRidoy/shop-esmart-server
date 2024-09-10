@@ -1,6 +1,25 @@
 import { ObjectId } from "mongodb";
 import { jwtTokenCreate } from "./jwt.js";
 
+export const getUserInformation = (usersCollection) => {
+  return async(req, res) => {
+    const email = req.query.email; 
+
+    const query = {email : email}; 
+
+    try{  
+      const userInfoResult = await usersCollection.findOne(query); 
+      return res.send(userInfoResult); 
+
+    }
+
+    catch(err){
+      return res.status(404).send({message : 'not found'})
+    }
+
+  }
+}
+
 //only all normal users loaded
 export const getAllUsers = (usersCollection) => {
   return async (req, res) => {
@@ -10,6 +29,8 @@ export const getAllUsers = (usersCollection) => {
     res.send(cursor);
   };
 };
+
+
 
 //only all manager, admin, moderator loaded
 export const getAllAdmin = (usersCollection) => {
@@ -165,6 +186,40 @@ export const patchStoreUserLastLogOutTime = (usersCollection) => {
     res.clearCookie("token").send({ success: true });
   };
 };
+
+// user information update 
+export const putUserInfoUpdate = (usersCollection) => {
+  return async(req, res) => {
+    const email = req.query.email; 
+
+    const userInfo = req.body ; 
+
+
+
+    // console.log('user email', email, 'user shippin info', userInfo) ;
+
+    try{
+      const filter = {email : email}; 
+      const updateDoc = {
+        $set: {
+          ...userInfo
+        }
+      }
+
+      const options = {upsert : true}; 
+
+      const updateInfoResult = await usersCollection.updateOne(filter, updateDoc, options); 
+
+      return res.send(updateInfoResult)
+
+    }
+    catch(error){
+      return res.status(500).send({ message: 'Failed to update user info', error })
+    }
+
+    
+  }
+}
 
 // user delete
 export const deleteUserByID = (usersCollection) => {
