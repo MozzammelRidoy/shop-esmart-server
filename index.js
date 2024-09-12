@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 
+
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 import { deleteProduct, getAllProductReadForAdmin, getAllProducts, getSigleProductReadForAdmin,  getSignleProductRead,  postAddNewProduct, putUpdateProduct } from "./modules/products.js";
 import {
@@ -25,6 +26,7 @@ import { deleteCategoryOne, getAllCategories, postNewCategories, putCategoryUpda
 import { getBannerImage, postBannerUpload, putBannerImages } from "./modules/banner.js";
 import { deleteOneCart, getAllCartsRead, postNewAddToCarts, updateAddToCarts } from "./modules/carts.js";
 import { getALLOrdersRead, postOrdersSubmit } from "./modules/orders.js";
+import { postCancelPayment, postFailedPayemt, postInitiatePayment, postSuccessPayment } from "./modules/payment.js";
 
 var app = express();
 var port = process.env.PORT || 5000;
@@ -38,6 +40,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 app.use(cookieParser());
 
 
@@ -125,9 +128,17 @@ async function run() {
 
     
     //orders releted api 
-    app.get('/orders', verifyToken, isBaned, getALLOrdersRead(ordersCollection)); 
+    app.get('/orders',  getALLOrdersRead(ordersCollection)); 
     app.post('/orders', verifyToken, isBaned, postOrdersSubmit(ordersCollection)); 
 
+
+    //payment releted api
+    app.post('/initiate-payment', verifyToken, isBaned, postInitiatePayment(ordersCollection) ); 
+    app.post('/success-payment', verifyToken, isBaned, postSuccessPayment(ordersCollection, cartsCollection) );
+    app.post('/cancel-payment', verifyToken, isBaned, postCancelPayment(ordersCollection) );
+    app.post('/failed-payment', verifyToken, isBaned, postFailedPayemt(ordersCollection) );
+    
+    
 
     // for mongodb code customize
     app.get("/custome", async (req, res) => {

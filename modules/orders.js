@@ -1,13 +1,13 @@
 
 // personal own order load for user / public api 
-export const getALLOrdersRead = (ordersCollection) => {
+export const  getALLOrdersRead = (ordersCollection) => {
     return async(req, res) => {
         const email = req.query.email; 
 
-        const query = {email : email};
+        // const query = {email : email};
 
         try{
-            const ordersResult = await ordersCollection.find(query).toArray(); 
+            const ordersResult = await ordersCollection.find().toArray(); 
 
             return res.send(ordersResult);
         }
