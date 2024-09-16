@@ -16,7 +16,7 @@ export const getAllProducts = (productCollection) => {
       finalPrice: { $gte: Number(min), $lte: Number(max) },
     };
     if (category && category !== "all") {
-      query.productCategory = { $in : [category]};
+      query.productCategory = { $in: [category] };
     }
 
     let sortOption = {};
@@ -35,7 +35,15 @@ export const getAllProducts = (productCollection) => {
       sortOption.productName = -1;
     }
     const options = {
-      projection: { _id : 1, productName : 1, discountPercent : 1, images : 1, finalPrice : 1, ratings : 1, ratingsCount : 1 },
+      projection: {
+        _id: 1,
+        productName: 1,
+        discountPercent: 1,
+        images: 1,
+        finalPrice: 1,
+        ratings: 1,
+        ratingsCount: 1,
+      },
     };
     try {
       const products = await productCollection
@@ -48,7 +56,7 @@ export const getAllProducts = (productCollection) => {
 
       res.send({
         products,
-        numberOfPage: Math.ceil(totalResults / size),
+        numberOfPage: Math.ceil(totalResults / Number(size)),
         totalResults: totalResults,
       });
     } catch (err) {
@@ -56,8 +64,6 @@ export const getAllProducts = (productCollection) => {
     }
   };
 };
-
-
 
 //read single product for public
 export const getSignleProductRead = (productCollection) => {
@@ -83,11 +89,35 @@ export const getSignleProductRead = (productCollection) => {
 //all product read for admin
 export const getAllProductReadForAdmin = (productCollection) => {
   return async (req, res) => {
-    const query = {};
+    const { page = 0, size = 10, search = "" } = req.query;
+   
+
+    let query = {};
+    if (search) {
+      const searchWord = search.split(" ").filter(word => word.trim() !== ""); 
+
+      const isValidObjectId = ObjectId.isValid(search); 
+      query = {
+        $or: [
+          { code: { $regex: search, $options: "i" } },
+          { productName: { $regex: searchWord.join("|"), $options: "i" } },
+          ...(isValidObjectId ? [{ _id : new ObjectId(search)}] : [])
+        ],
+      };
+    }
 
     try {
-      const productsResult = await productCollection.find(query).toArray();
-      res.send(productsResult);
+      const productsResult = await productCollection
+        .find(query)
+        .skip(Number(page) * Number(size))
+        .limit(Number(size))
+        .toArray();
+      const totalResults = await productCollection.countDocuments(query);
+      res.send({
+        collections: productsResult,
+        numberOfPage: Math.ceil(totalResults / Number(size)),
+        totalResults: totalResults,
+      });
     } catch {
       res.status(404).send({ message: "Products Not Found" });
     }

@@ -42,6 +42,7 @@ export const postInitiatePayment = (ordersCollection) => {
       product_name: productName,
       product_category: productCategory,
       product_profile: "general",
+     
     };
 
     try {
@@ -66,9 +67,16 @@ export const postInitiatePayment = (ordersCollection) => {
 };
 
 // if payment success hit this api
-export const postSuccessPayment = (ordersCollection, cartsCollection) => {
+export const postSuccessPayment = (
+  ordersCollection,
+  cartsCollection,
+  couponsCollection,
+  client
+) => {
   return async (req, res) => {
     const successData = req.body;
+    const email = req.user.email; 
+
 
     try {
       if (successData.status !== "VALID") {
@@ -78,6 +86,12 @@ export const postSuccessPayment = (ordersCollection, cartsCollection) => {
       const sslcz = new SSLCommerzPayment(store_id, store_password, false);
       sslcz.validate({ val_id: successData.val_id }).then(async (result) => {
         if (result.status === "VALID") {
+
+          const session = client.startSession(); 
+
+          session.startTransaction();
+
+         try{
           const query = { TxID: successData.tran_id };
 
           const updateDoc = {
@@ -95,7 +109,7 @@ export const postSuccessPayment = (ordersCollection, cartsCollection) => {
               verify_key: successData.verify_key,
               currency_amount: successData.currency_amount,
               risk_title: successData.risk_title,
-              order_status : 'Pending'
+              order_status: "Pending",
             },
           };
 
@@ -104,18 +118,76 @@ export const postSuccessPayment = (ordersCollection, cartsCollection) => {
           const paymentSuccessResult = await ordersCollection.updateOne(
             query,
             updateDoc,
-            options
+            {session, ...options}
           );
           if (paymentSuccessResult.modifiedCount > 0) {
-            const email = req.user.email;
+            
+            // coupon inforomation update like total count, user count, user email. 
 
-            const query = { email: email };
-            await cartsCollection.deleteMany(query);
+            const couponInfo =  await ordersCollection.findOne({TxID : successData.tran_id}, {session}); 
 
-            // return res.status(200).send({ success: true });
-            return res.redirect(`${process.env.CLIENT_URL}/payment-success?paid-amount=${successData.currency_amount}&TxID=${successData.tran_id}`);
+            if (couponInfo.couponCode) {
+              const couponQuery = {
+                coupon_code: couponInfo.couponCode,
+              };
+              const coupon = await couponsCollection.findOne(couponQuery, {session}); 
+
+              const user = coupon?.usage?.users?.find((u)=> u.email === email); 
+
+              let couponDataUpdate = {}; 
+
+              if(user){
+                couponDataUpdate = {
+                  $inc : {
+                    total_count : 1,
+                     "usage.users.$[elem].count": 1
+                  }
+
+                }
+                await couponsCollection.updateOne(couponQuery, couponDataUpdate, {session ,arrayFilters: [{ "elem.email": email }] })
+              }
+              else{
+                couponDataUpdate = {
+                  $inc : {total_count : 1},
+                  $push : {
+                    "usage.users" : {email : email, count : 1}
+                  }
+                }
+                await couponsCollection.updateOne(couponQuery, couponDataUpdate, {session})
+              }
+
+              
+             }
+            await cartsCollection.deleteMany({email : email}, {session});
+
+
+             await session.commitTransaction();
+             session.endSession();
+            
+            return res.redirect(
+              `${process.env.CLIENT_URL}/payment-success?paid-amount=${successData.currency_amount}&TxID=${successData.tran_id}`
+            );
+          } else{
+            await session.abortTransaction(); 
+            session.endSession(); 
+            return res
+                .status(400)
+                .send({ message: "Payment update failed" });
           }
+         }
+         catch(error){
+          await session.abortTransaction(); 
+          session.endSession();
+          return res
+              .status(500)
+              .send({ message: "Transaction failed, rolled back" });
+         }
         }
+
+        else{
+          return res.status(400).send({ message: "Invalid Payment" });
+        }
+
       });
     } catch (err) {
       return res.status(400).send({ message: "unauthorize access" });
@@ -135,7 +207,9 @@ export const postCancelPayment = (ordersCollection) => {
         if (orderDelete.deletedCount > 0) {
           return res
             .status(200)
-            .redirect(`${process.env.CLIENT_URL}/payment-cancel?status="cancel your payment"`);
+            .redirect(
+              `${process.env.CLIENT_URL}/payment-cancel?status="cancel your payment"`
+            );
         }
       }
     } catch (err) {
@@ -156,7 +230,9 @@ export const postFailedPayemt = (ordersCollection) => {
         if (orderDelete.deletedCount > 0) {
           return res
             .status(200)
-            .redirect(`${process.env.CLIENT_URL}/payment-failed?status="failed your payment"`);
+            .redirect(
+              `${process.env.CLIENT_URL}/payment-failed?status="failed your payment"`
+            );
         }
       }
     } catch (err) {
@@ -164,3 +240,93 @@ export const postFailedPayemt = (ordersCollection) => {
     }
   };
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const query = { TxID: successData.tran_id };
+
+// const updateDoc = {
+//   $set: {
+//     payment: "Paid",
+//     val_id: successData.val_id,
+//     card_type: successData.card_type,
+//     bank_tran_id: successData.bank_tran_id,
+//     payment_status: successData.status,
+//     tran_date: successData.tran_date,
+//     currency: successData.currency,
+//     card_issuer: successData.card_issuer,
+//     card_issuer_country: successData.card_issuer_country,
+//     verify_sign: successData.verify_sign,
+//     verify_key: successData.verify_key,
+//     currency_amount: successData.currency_amount,
+//     risk_title: successData.risk_title,
+//     order_status: "Pending",
+//   },
+// };
+
+// const options = { upsert: true };
+
+// const paymentSuccessResult = await ordersCollection.updateOne(
+//   query,
+//   updateDoc,
+//   options
+// );
+// if (paymentSuccessResult.modifiedCount > 0) {
+  
+//   // coupon inforomation update like total count, user count, user email. 
+
+//   const couponInfo =  await ordersCollection.findOne({TxID : successData.tran_id}); 
+
+//   if (couponInfo.couponCode) {
+//     const couponQuery = {
+//       coupon_code: couponInfo.couponCode,
+//     };
+//     const coupon = await couponsCollection.findOne(couponQuery); 
+
+//     const user = coupon?.usage?.users?.find((u)=> u.email === email); 
+
+//     let couponDataUpdate = {}; 
+
+//     if(user){
+//       couponDataUpdate = {
+//         $inc : {
+//           total_count : 1,
+//            "usage.users.$[elem].count": 1
+//         }
+
+//       }
+//       await couponsCollection.updateOne(couponQuery, couponDataUpdate, {arrayFilters: [{ "elem.email": email }] })
+//     }
+//     else{
+//       couponDataUpdate = {
+//         $inc : {total_count : 1},
+//         $push : {
+//           "usage.users" : {email : email, count : 1}
+//         }
+//       }
+//       await couponsCollection.updateOne(couponQuery, couponDataUpdate)
+//     }
+
+    
+//    }
+//   await cartsCollection.deleteMany({email : email});
+
+//   // return res.status(200).send({ success: true });
+//   return res.redirect(
+//     `${process.env.CLIENT_URL}/payment-success?paid-amount=${successData.currency_amount}&TxID=${successData.tran_id}`
+//   );
+// }

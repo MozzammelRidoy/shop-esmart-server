@@ -27,7 +27,7 @@ import { getBannerImage, postBannerUpload, putBannerImages } from "./modules/ban
 import { deleteOneCart, getAllCartsRead, postNewAddToCarts, updateAddToCarts } from "./modules/carts.js";
 import { getALLOrdersRead, postOrdersSubmit } from "./modules/orders.js";
 import { postCancelPayment, postFailedPayemt, postInitiatePayment, postSuccessPayment } from "./modules/payment.js";
-import { deleteCoupons, getAllAvailableCoupons, postNewCoupons, putUpdateCoupons } from "./modules/coupons.js";
+import { deleteCoupons, getAllAvailableCoupons, getAllCouponsForAdmin, getSingleCoupon, patchUpdateCoupons, postNewCoupons, postUserApplyCoupon, } from "./modules/coupons.js";
 
 var app = express();
 var port = process.env.PORT || 5000;
@@ -100,9 +100,12 @@ async function run() {
 
     //coupons releted api
     app.get('/coupons', verifyToken, isBaned, getAllAvailableCoupons(couponsCollection) ); 
-    app.post('/coupons', verifyToken, isBaned, isUserBlocked, postNewCoupons(couponsCollection) ); 
-    app.put('/coupons/:id', verifyToken, isBaned, isUserBlocked, putUpdateCoupons(couponsCollection) ); 
-    app.delete('/coupons/:id', verifyToken, isBaned, isUserBlocked, deleteCoupons(couponsCollection) ); 
+    app.get('/coupons/admin',verifyToken, isBaned, isUserBlocked, getAllCouponsForAdmin(couponsCollection) ); 
+    app.get('/coupons/:id', verifyToken, isBaned, getSingleCoupon(couponsCollection) ); 
+    app.post('/coupons', verifyToken, isBaned, isUserBlocked, postNewCoupons(couponsCollection) );
+    app.post('/coupons-apply', verifyToken, isBaned, postUserApplyCoupon(couponsCollection));
+    app.patch('/coupons/:id', verifyToken, isBaned, isUserBlocked, patchUpdateCoupons(couponsCollection) ); 
+    app.delete('/coupons-delete/:id', verifyToken, isBaned, isUserBlocked, deleteCoupons(couponsCollection) ); 
 
     
     //banner Releted api
@@ -138,12 +141,12 @@ async function run() {
     
     //orders releted api 
     app.get('/orders',  getALLOrdersRead(ordersCollection)); 
-    app.post('/orders', verifyToken, isBaned, postOrdersSubmit(ordersCollection, cartsCollection)); 
+    app.post('/orders', verifyToken, isBaned, postOrdersSubmit(ordersCollection, cartsCollection, couponsCollection, client)); 
 
 
     //payment releted api
     app.post('/initiate-payment', verifyToken, isBaned, postInitiatePayment(ordersCollection) ); 
-    app.post('/success-payment', verifyToken, isBaned, postSuccessPayment(ordersCollection, cartsCollection) );
+    app.post('/success-payment', verifyToken, isBaned, postSuccessPayment(ordersCollection, cartsCollection, couponsCollection, client) );
     app.post('/cancel-payment', verifyToken, isBaned, postCancelPayment(ordersCollection) );
     app.post('/failed-payment', verifyToken, isBaned, postFailedPayemt(ordersCollection) );
 
