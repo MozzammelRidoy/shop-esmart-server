@@ -90,18 +90,17 @@ export const getSignleProductRead = (productCollection) => {
 export const getAllProductReadForAdmin = (productCollection) => {
   return async (req, res) => {
     const { page = 0, size = 10, search = "" } = req.query;
-   
 
     let query = {};
     if (search) {
-      const searchWord = search.split(" ").filter(word => word.trim() !== ""); 
+      const searchWord = search.split(" ").filter((word) => word.trim() !== "");
 
-      const isValidObjectId = ObjectId.isValid(search); 
+      const isValidObjectId = ObjectId.isValid(search);
       query = {
         $or: [
           { code: { $regex: search, $options: "i" } },
           { productName: { $regex: searchWord.join("|"), $options: "i" } },
-          ...(isValidObjectId ? [{ _id : new ObjectId(search)}] : [])
+          ...(isValidObjectId ? [{ _id: new ObjectId(search) }] : []),
         ],
       };
     }
@@ -148,6 +147,9 @@ export const postAddNewProduct = (productCollection) => {
     }
 
     newProduct.createdAt = new Date();
+    (newProduct.totalRatingsCount = 0),
+      (newProduct.averageRating = 0),
+      (newProduct.ratings = []);
 
     try {
       const result = await productCollection.insertOne(newProduct);
@@ -204,6 +206,84 @@ export const deleteProduct = (productCollection) => {
       res.send(deleteProduct);
     } catch (err) {
       return res.status(404).send({ message: "Failed to Delete Product", err });
+    }
+  };
+};
+
+// products ratings check
+export const getProductRatingCheck = (productCollection) => {
+  return async(req, res)=> {
+    const id = req.params.id; 
+    const email = req.user.email; 
+
+    const query = {_id : new ObjectId(id)}; 
+
+    try{
+
+      const product = await productCollection.findOne(query, {projection : {ratings : 1}}); 
+
+      if(!product){
+        return res.status(404).send({message : "Product Not Found"}); 
+
+      }
+
+      const hasRated = product.ratings.some(rating => rating.user === email); 
+
+      if(hasRated){
+        return res.status(200).send({ratingSubmit : false, message : 'User Already Ratting Submited!'})
+      }
+      else{
+        return res.status(200).send({ratingSubmit : true, message : 'User can submit a rating'})
+      }
+
+    }
+    catch(err){
+      return res.status(500).json({ message: "Server error, please try again later." });
+    }
+
+
+  }
+}
+
+// ratings submit
+export const patchProductRatingSubmit = (productsCollection) => {
+  return async (req, res) => {
+    const { productId, user, rating, review = "" } = req.body;
+
+    try {
+      const product = await productsCollection.findOne({
+        _id: new ObjectId(productId),
+      });
+
+      const currentRatings = product.ratings || []; 
+
+      const updatedRatings = [
+        ...currentRatings,
+        { user, rating: Number(rating), review, createdAt: new Date() },
+      ];
+
+      const totalRatingsCount = updatedRatings.length;
+
+      const sumOfRatings = updatedRatings.reduce((sum, r) => sum + r.rating, 0);
+      const averageRating = sumOfRatings / totalRatingsCount;
+
+      const ratingSubmitResult = await productsCollection.updateOne(
+        { _id: new ObjectId(productId) },
+        {
+          $set: {
+            ratings: updatedRatings,
+            totalRatingsCount,
+            averageRating,
+          },
+        },
+        {
+          upsert: true,
+        }
+      );
+
+      return res.status(200).send(ratingSubmitResult);
+    } catch (err) {
+      return res.status(400).send({ message: "Error submitting rating" });
     }
   };
 };

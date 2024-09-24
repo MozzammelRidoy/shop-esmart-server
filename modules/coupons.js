@@ -216,6 +216,12 @@ export const postUserApplyCoupon = (couponsCollection) => {
         discountAmount = coupon.max_discount;
       }
 
+      if(discountAmount > totalPrice){
+        return res
+        .status(403)
+        .send({ message: "Discount Exceeds Order Total. Add more items to Proceed!" });
+      }
+
       // Calculate Final Total after discount
       const finalAmount = totalPrice - discountAmount + shippingValue;
 

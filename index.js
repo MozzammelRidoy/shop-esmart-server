@@ -1,10 +1,10 @@
-import express from "express";
+import express, { query } from "express";
 import cors from "cors";
 import "dotenv/config";
 
 
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
-import { deleteProduct, getAllProductReadForAdmin, getAllProducts, getSigleProductReadForAdmin,  getSignleProductRead,  postAddNewProduct, putUpdateProduct } from "./modules/products.js";
+import { deleteProduct, getAllProductReadForAdmin, getAllProducts, getProductRatingCheck, getSigleProductReadForAdmin,  getSignleProductRead,  patchProductRatingSubmit,  postAddNewProduct, putUpdateProduct } from "./modules/products.js";
 import {
   deleteUserByID,
   getAllAdmin,
@@ -25,9 +25,11 @@ import { isAdminOrManager, isAnyAdmin, isBaned, isUserBlocked, limiter, verifyTo
 import { deleteCategoryOne, getAllCategories, postNewCategories, putCategoryUpdate } from "./modules/categories.js";
 import { getBannerImage, postBannerUpload, putBannerImages } from "./modules/banner.js";
 import { deleteOneCart, getAllCartsRead, postNewAddToCarts, updateAddToCarts } from "./modules/carts.js";
-import { getALLOrdersRead, postOrdersSubmit } from "./modules/orders.js";
+import { deleteSingleOrder, getAllCanceledOrders, getAllCompleteOrders, getAllOrdersForAdmin, getALLOrdersRead, getAllPendingOrders, getAllTransaction, patchUpdateOrderStatus, postOrdersSubmit } from "./modules/orders.js";
 import { postCancelPayment, postFailedPayemt, postInitiatePayment, postSuccessPayment } from "./modules/payment.js";
 import { deleteCoupons, getAllAvailableCoupons, getAllCouponsForAdmin, getSingleCoupon, patchUpdateCoupons, postNewCoupons, postUserApplyCoupon, } from "./modules/coupons.js";
+import { deleteFavoriteProduct, getAllFavoriteProduct, postNewFavoriteProduct } from "./modules/favorite.js";
+import { getAllOrderSummery, getExtendedSummary, getRevenueSummery } from "./modules/controllers.js";
 
 var app = express();
 var port = process.env.PORT || 5000;
@@ -74,6 +76,7 @@ async function run() {
     const cartsCollection = client.db("shopEsmartDb").collection("carts");
     const ordersCollection = client.db("shopEsmartDb").collection("orders");
     const couponsCollection = client.db("shopEsmartDb").collection("coupons");
+    const favoritesCollection = client.db("shopEsmartDb").collection("favorites");
 
     // jwt json web token releted api  
     app.post('/logout', jwtTokenClear()); 
@@ -84,8 +87,10 @@ async function run() {
     app.get('/products', getAllProducts(productsCollection));
     app.get('/products/admin',verifyToken, isBaned, isAnyAdmin, getAllProductReadForAdmin(productsCollection));
     app.get('/products/:id', getSignleProductRead(productsCollection) );
+    app.get('/products-review-check/:id', verifyToken, isBaned, getProductRatingCheck(productsCollection) );
     app.get('/products/admin/:id', verifyToken, isBaned, isAnyAdmin, getSigleProductReadForAdmin(productsCollection));
     app.post('/products/addnew', verifyToken, isBaned, isAnyAdmin, postAddNewProduct(productsCollection) );
+    app.patch('/products-review', verifyToken, isBaned, patchProductRatingSubmit(productsCollection))
     app.put('/products/update/:id', verifyToken, isBaned, isAnyAdmin, putUpdateProduct(productsCollection));
     app.delete('/products/delete/:id', verifyToken, isBaned, isAnyAdmin, deleteProduct(productsCollection));
     
@@ -138,10 +143,24 @@ async function run() {
     app.delete('/carts/:id', verifyToken, isBaned, deleteOneCart(cartsCollection)); 
 
 
+    //favorite releted api
+    app.get('/favorite', verifyToken, isBaned, getAllFavoriteProduct(favoritesCollection)); 
+    app.post('/favorite', verifyToken, isBaned, postNewFavoriteProduct(favoritesCollection)); 
+    app.delete('/favorite/:id', verifyToken, isBaned, deleteFavoriteProduct(favoritesCollection));
+
+
+
     
     //orders releted api 
-    app.get('/orders',  getALLOrdersRead(ordersCollection)); 
-    app.post('/orders', verifyToken, isBaned, postOrdersSubmit(ordersCollection, cartsCollection, couponsCollection, client)); 
+    app.get('/orders', verifyToken, isBaned, getALLOrdersRead(ordersCollection)); 
+    app.get('/orders-pending', verifyToken, isBaned, isUserBlocked, getAllPendingOrders(ordersCollection)); 
+    app.get('/orders-all', verifyToken, isBaned, isUserBlocked, getAllOrdersForAdmin(ordersCollection)); 
+    app.get('/orders-cancel', verifyToken, isBaned, isUserBlocked, getAllCanceledOrders(ordersCollection)); 
+    app.get('/orders-complete', verifyToken, isBaned, isUserBlocked, getAllCompleteOrders(ordersCollection)); 
+    app.get('/orders-transaction', verifyToken, isBaned, isUserBlocked, getAllTransaction(ordersCollection)); 
+    app.post('/orders', verifyToken, isBaned, postOrdersSubmit(ordersCollection, cartsCollection, couponsCollection, client));
+    app.patch('/orders-update/:id', verifyToken, isBaned, isUserBlocked, patchUpdateOrderStatus(ordersCollection, productsCollection)); 
+    app.delete('/orders-delete/:id', verifyToken, isBaned, isUserBlocked, deleteSingleOrder(ordersCollection)); 
 
 
     //payment releted api
@@ -151,12 +170,19 @@ async function run() {
     app.post('/failed-payment', verifyToken, isBaned, postFailedPayemt(ordersCollection) );
 
 
+    //dashboard controller releted api 
+    app.get('/orders-summery', getAllOrderSummery(ordersCollection, usersCollection)); 
+    app.get('/revenue-summery', getRevenueSummery(ordersCollection, productsCollection)); 
+    app.get('/extended-summary', getExtendedSummary(ordersCollection, productsCollection)); 
+    
+
+
     
     
 
     // for mongodb code customize
     app.get("/custome", async (req, res) => {
-     
+      
     });
 
     

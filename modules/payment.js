@@ -77,6 +77,8 @@ export const postSuccessPayment = (
     const successData = req.body;
     const email = req.user.email; 
 
+    
+
 
     try {
       if (successData.status !== "VALID") {
@@ -110,6 +112,9 @@ export const postSuccessPayment = (
               currency_amount: successData.currency_amount,
               risk_title: successData.risk_title,
               order_status: "Pending",
+              ssl_error : successData.error,
+              card_brand : successData.card_brand,
+
             },
           };
 

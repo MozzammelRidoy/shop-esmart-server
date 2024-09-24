@@ -68,6 +68,7 @@ export const postSingleUser = (usersCollection) => {
     const newUserToken = { email: email, type: type, isBaned: isBaned };
 
     const newUser = req.body;
+    newUser.createdAt = new Date(); 
 
     const query = { email: newUser.email };
 
