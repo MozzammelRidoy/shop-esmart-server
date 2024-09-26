@@ -33,6 +33,82 @@ export const getAllOrderSummery = (ordersCollection, usersCollection) =>{
     }
 }
 
+// all order analysis. 
+export const getOrderAnalysis = (ordersCollection) => {
+    return async(req, res)=> {
+        const {startDate, endDate} = req.query; 
+
+        const matchQuery = {
+            createdAt : {$gte : new Date(startDate), $lte : new Date(endDate)}
+            
+        }
+
+        try{
+            const dailyOderAnalysis = await ordersCollection.aggregate([
+                {
+                    $match : matchQuery
+                },
+    
+                {
+                    $group : {
+                        _id : {
+                            year : {$year : "$createdAt"},
+                            month : {$month : "$createdAt"},
+                            day : {$dayOfMonth : "$createdAt"}
+                        },
+                        totalOrders : {$sum : 1},
+                        deliveredOrders : {
+                            $sum : {
+                                $cond : [{$eq : ["$order_status", "Delivered"]}, 1, 0]
+                            }
+                        },
+                        cancelOrders : {
+                            $sum : {
+                                $cond : [{$eq : ["$order_status", "Cancel"]}, 1, 0]
+                            }
+                        },
+                        returnOrders : {
+                            $sum : {
+                                $cond : [{$eq : ["$order_status", "Return"]}, 1, 0]
+                            }
+                        }
+    
+                        
+                    }
+                }, 
+                {
+                    $project : {
+                        _id : 0,
+                        date : {
+                            $concat : [
+                                {$toString : "$_id.year"},
+                                "-",
+                                {$toString : "$_id.month"},
+                                "-",
+                                {$toString : "$_id.day"},
+                                
+                            ]
+                        },
+                        totalOrders : 1,
+                        deliveredOrders : 1, 
+                        cancelOrders : 1,
+                        returnOrders : 1
+                    }
+                }, 
+                {
+                    $sort : {date : 1}
+                }
+            ]).toArray();
+    
+            return  res.status(200).send({data : dailyOderAnalysis})
+        }
+        catch(err){
+            return res.status(400).send({ message: 'Error fetching Orders Analysis' })
+        }
+       
+    }
+}
+
 
 // revenue calculation , like : revenue, profit, coupon discount, product discount
 export const getRevenueSummery = (ordersCollection, productsCollection)=>{
@@ -104,13 +180,16 @@ export const getExtendedSummary = (ordersCollection, productsCollection) => {
             'finalPrice' : 1,
             'stockQuantity' : 1,
             'productCode' : 1,
+            'averageRating' : 1,
+            'totalRatingsCount' : 1
         }
+       
 
         try{
 
             const topSellingProducts = await productsCollection.find({...matchQuery}, {projection}).sort({totalSold : -1}).limit(10).toArray(); 
 
-            const trendingProducts = await productsCollection.find({...matchQuery}, {projection}).sort({ratings : -1, totalSold : -1}).limit(10).toArray(); 
+            const trendingProducts = await productsCollection.find({...matchQuery}, {projection}).sort({totalRatingsCount : -1,  averageRating : -1, totalSold : -1}).limit(10).toArray(); 
 
             const lowStockAlerts = await productsCollection.find({...matchQuery, stockQuantity : {$lte : 10}}, {projection}).sort({stockQuantity : 1}).limit(15).toArray(); 
 

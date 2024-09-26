@@ -28,8 +28,8 @@ import { deleteOneCart, getAllCartsRead, postNewAddToCarts, updateAddToCarts } f
 import { deleteSingleOrder, getAllCanceledOrders, getAllCompleteOrders, getAllOrdersForAdmin, getALLOrdersRead, getAllPendingOrders, getAllTransaction, patchUpdateOrderStatus, postOrdersSubmit } from "./modules/orders.js";
 import { postCancelPayment, postFailedPayemt, postInitiatePayment, postSuccessPayment } from "./modules/payment.js";
 import { deleteCoupons, getAllAvailableCoupons, getAllCouponsForAdmin, getSingleCoupon, patchUpdateCoupons, postNewCoupons, postUserApplyCoupon, } from "./modules/coupons.js";
-import { deleteFavoriteProduct, getAllFavoriteProduct, postNewFavoriteProduct } from "./modules/favorite.js";
-import { getAllOrderSummery, getExtendedSummary, getRevenueSummery } from "./modules/controllers.js";
+import { deleteFavoriteClearAll, deleteFavoriteProduct, getAllFavoriteProduct, getCheckFavoriteProduct, postNewFavoriteProduct } from "./modules/favorite.js";
+import { getAllOrderSummery, getExtendedSummary, getOrderAnalysis, getRevenueSummery } from "./modules/controllers.js";
 
 var app = express();
 var port = process.env.PORT || 5000;
@@ -144,9 +144,11 @@ async function run() {
 
 
     //favorite releted api
-    app.get('/favorite', verifyToken, isBaned, getAllFavoriteProduct(favoritesCollection)); 
-    app.post('/favorite', verifyToken, isBaned, postNewFavoriteProduct(favoritesCollection)); 
-    app.delete('/favorite/:id', verifyToken, isBaned, deleteFavoriteProduct(favoritesCollection));
+    app.get('/favorites', verifyToken, isBaned, getAllFavoriteProduct(favoritesCollection, productsCollection)); 
+    app.get('/favorites-check', getCheckFavoriteProduct(favoritesCollection)); 
+    app.post('/favorites', verifyToken, isBaned, postNewFavoriteProduct(favoritesCollection)); 
+    app.delete('/favorites', verifyToken, isBaned, deleteFavoriteProduct(favoritesCollection));
+    app.delete('/favorites-clear-all/:email', verifyToken, isBaned, deleteFavoriteClearAll(favoritesCollection));
 
 
 
@@ -172,6 +174,7 @@ async function run() {
 
     //dashboard controller releted api 
     app.get('/orders-summery', getAllOrderSummery(ordersCollection, usersCollection)); 
+    app.get('/orders-analysis', getOrderAnalysis(ordersCollection) );
     app.get('/revenue-summery', getRevenueSummery(ordersCollection, productsCollection)); 
     app.get('/extended-summary', getExtendedSummary(ordersCollection, productsCollection)); 
     

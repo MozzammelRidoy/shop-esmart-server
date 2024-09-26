@@ -42,7 +42,8 @@ export const getAllProducts = (productCollection) => {
         images: 1,
         finalPrice: 1,
         ratings: 1,
-        ratingsCount: 1,
+        totalRatingsCount: 1,
+        averageRating : 1
       },
     };
     try {
@@ -221,7 +222,7 @@ export const getProductRatingCheck = (productCollection) => {
     try{
 
       const product = await productCollection.findOne(query, {projection : {ratings : 1}}); 
-
+     
       if(!product){
         return res.status(404).send({message : "Product Not Found"}); 
 
@@ -230,7 +231,9 @@ export const getProductRatingCheck = (productCollection) => {
       const hasRated = product.ratings.some(rating => rating.user === email); 
 
       if(hasRated){
-        return res.status(200).send({ratingSubmit : false, message : 'User Already Ratting Submited!'})
+        const userReview = product.ratings.find(rating => rating.user === email); 
+
+        return res.status(200).send({ratingSubmit : false, userReview})
       }
       else{
         return res.status(200).send({ratingSubmit : true, message : 'User can submit a rating'})
@@ -265,7 +268,7 @@ export const patchProductRatingSubmit = (productsCollection) => {
       const totalRatingsCount = updatedRatings.length;
 
       const sumOfRatings = updatedRatings.reduce((sum, r) => sum + r.rating, 0);
-      const averageRating = sumOfRatings / totalRatingsCount;
+      const averageRating = (sumOfRatings / totalRatingsCount).toFixed(1);
 
       const ratingSubmitResult = await productsCollection.updateOne(
         { _id: new ObjectId(productId) },
