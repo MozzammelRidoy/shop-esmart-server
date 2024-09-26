@@ -3,8 +3,8 @@ import cors from "cors";
 import "dotenv/config";
 
 
-import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
-import { deleteProduct, getAllProductReadForAdmin, getAllProducts, getProductRatingCheck, getSigleProductReadForAdmin,  getSignleProductRead,  patchProductRatingSubmit,  postAddNewProduct, putUpdateProduct } from "./modules/products.js";
+import { MongoClient, ServerApiVersion } from "mongodb";
+import { deleteProduct, getAllProductReadForAdmin, getAllProducts, getProductRatingCheck, getProductSearch, getSigleProductReadForAdmin,  getSignleProductRead,  patchProductRatingSubmit,  postAddNewProduct, putUpdateProduct } from "./modules/products.js";
 import {
   deleteUserByID,
   getAllAdmin,
@@ -85,6 +85,7 @@ async function run() {
     //products releted api
     
     app.get('/products', getAllProducts(productsCollection));
+    app.get('/products-search', getProductSearch(productsCollection));
     app.get('/products/admin',verifyToken, isBaned, isAnyAdmin, getAllProductReadForAdmin(productsCollection));
     app.get('/products/:id', getSignleProductRead(productsCollection) );
     app.get('/products-review-check/:id', verifyToken, isBaned, getProductRatingCheck(productsCollection) );

@@ -1,3 +1,4 @@
+import Fuse from "fuse.js";
 import { ObjectId } from "mongodb";
 
 // all product read for public.
@@ -65,6 +66,89 @@ export const getAllProducts = (productCollection) => {
     }
   };
 };
+
+// //product search with fuse.js
+// export const getProductSearch = (productCollection) => {
+//   return async(req, res)=> {
+//     const {search = '', dataLoad = 10} = req.query; 
+
+    
+
+//     const options = {
+//       projection: {
+//         _id: 1,
+//         productName: 1,
+//         discountPercent: 1,
+//         images: 1,
+//         finalPrice: 1,
+//         ratings: 1,
+//         totalRatingsCount: 1,
+//         averageRating : 1
+//       },
+//     };
+
+//     try{
+//       const products = await productCollection.find({}, options).limit(1000).toArray(); 
+
+//       const fuse = new Fuse(products, {
+//         keys : ['productName', 'productCode'],
+//         includeScore : true,
+//         threshold : 0.2,
+//         tokenize : true,
+//         matchAllTokens : true
+//       }); 
+
+//       const searchResults = fuse.search(search); 
+//       const results = searchResults.map(result => result.item); 
+
+      
+
+      
+//       return res.status(200).send({totalResults : results.length, searchResultss : results.slice(0, Number(dataLoad)) })
+//     }
+//     catch(err){
+//       return res.status(400).send({message : 'Operation Failed!'})
+//     }
+//   }
+// } 
+
+//product search with mongodb regex
+export const getProductSearch = (productCollection) => {
+  return async(req, res)=> {
+    const {search, dataLoad = 10} = req.query; 
+
+    const query = {
+      $or : [
+        {productName : {$regex : search.split(' ').join("|"), $options : 'i'}},
+        {productCode : {$regex : search.split(' ').join("|"), $options : 'i'}}
+      ]
+    }; 
+
+    const options = {
+      projection: {
+        _id: 1,
+        productName: 1,
+        discountPercent: 1,
+        images: 1,
+        finalPrice: 1,
+        ratings: 1,
+        totalRatingsCount: 1,
+        averageRating : 1
+      },
+    };
+
+    try{
+      const searchResultss = await productCollection.find(query, options).limit(Number(dataLoad)).toArray(); 
+
+      const totalResults = await productCollection.countDocuments(query);
+      return res.status(200).send({totalResults, searchResultss})
+    }
+    catch(err){
+      return res.status(400).send({message : 'Operation Failed!'})
+    }
+  }
+} 
+
 
 //read single product for public
 export const getSignleProductRead = (productCollection) => {

@@ -46,3 +46,13 @@ export const deleteImageFromCloudinary = () => {
     }
   };
 };
+
+
+export const isUserCheck = (req, res) => {
+  const reqEmail = req.query.email; 
+  const jwtEmail = req.user.email; 
+
+  if(reqEmail !== jwtEmail){
+    return res.status(403).send({message : "Forbidden Access!"})
+  }
+}
