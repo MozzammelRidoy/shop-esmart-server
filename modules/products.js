@@ -225,6 +225,60 @@ export const getReletedProducts = (productCollection) => {
   }
 }
 
+// for you prodcut 
+
+export const getForYouProducts = (productCollection) => {
+  return async(req, res) => {
+    const {dataLoad = 10} = req.query; 
+
+    const query = {
+      $and : [
+        {discountAmount : {$gte : 0}},
+        {stockQuantity : {$gte : 1}},
+        {stockStatus : {$eq : true}}
+      ]
+    }; 
+
+
+    const options = {
+
+      sort : {
+        discountPercent : -1, 
+        stockQuantity : -1, 
+        discountAmount : -1, 
+        totalSold : -1,
+        createdAt : -1, 
+        averageRating : -1,
+        lastEdit : -1,
+        totalRatingsCount : -1
+
+      },
+      projection : {
+        _id: 1,
+        productName: 1,
+        discountPercent: 1,
+        images: 1,
+        finalPrice: 1,
+        totalRatingsCount: 1,
+        averageRating : 1,
+        discountAmount : 1,
+      }
+
+    }; 
+    
+    try{
+        const foryouResults = await productCollection.find(query, options).limit(Number(dataLoad)).toArray(); 
+
+        const totalResults = await productCollection.countDocuments(query); 
+
+        return res.status(200).send({foryouResults, totalResults})
+    }
+    catch(err){
+      return res.status(400).send({message : "Error Fatching For You Prodcuts!"})
+    }
+  }
+}
+
 //read single product for public
 export const getSignleProductRead = (productCollection) => {
   return async (req, res) => {
