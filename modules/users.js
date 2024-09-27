@@ -20,13 +20,39 @@ export const getUserInformation = (usersCollection) => {
   }
 }
 
+
 //only all normal users loaded
 export const getAllUsers = (usersCollection) => {
   return async (req, res) => {
-    const query = { type: "user" };
+    const {dataLoad = 10, search} = req.query;  
+    let query = { type: "user" };
 
-    const cursor = await usersCollection.find(query).toArray();
-    res.send(cursor);
+    if(search){
+      const searchQuery = {
+        $or : [
+          {email : {$regex : search, $options : 'i'}},
+          {phone : {$regex : search, $options : 'i'}}
+        ]
+      } 
+
+      if(ObjectId.isValid(search)){
+        searchQuery.$or.push({_id : new ObjectId(search)})
+      }
+
+      query = {$and : [query, searchQuery]}
+    }
+
+   
+
+    try{
+      const usersResults = await usersCollection.find(query).limit(Number(dataLoad)).sort({createdAt : -1}).toArray();
+      const totalResults = await usersCollection.countDocuments(query)
+
+    return  res.status(200).send({users : usersResults, totalResults});
+    }
+    catch(err){
+      return res.status(400).send({message : 'Operation Failed!'})
+    }
   };
 };
 
@@ -35,8 +61,25 @@ export const getAllUsers = (usersCollection) => {
 //only all manager, admin, moderator loaded
 export const getAllAdmin = (usersCollection) => {
   return async (req, res) => {
-    const query = { type: { $ne: "user" } };
-    const cursor = await usersCollection
+    const {dataLoad = 10, search} = req.query; 
+    let query = { type: { $ne: "user" } };
+    if(search){
+      const searchQuery = {
+        $or : [
+          {email : {$regex : search, $options : 'i'}},
+          {phone : {$regex : search, $options : 'i'}}
+        ]
+      } 
+
+      if(ObjectId.isValid(search)){
+        searchQuery.$or.push({_id : new ObjectId(search)})
+      }
+
+      query = {$and : [query, searchQuery]}
+    }
+    
+    try{
+      const usersResults = await usersCollection
       .aggregate([
         { $match: query },
         {
@@ -53,11 +96,16 @@ export const getAllAdmin = (usersCollection) => {
             },
           },
         },
-        { $sort: { sortOrder: 1 } },
-      ])
+        { $sort: { sortOrder: 1} },
+      ]).limit(Number(dataLoad))
       .toArray();
+      const totalResults = await usersCollection.countDocuments(query); 
 
-    res.send(cursor);
+     return res.status(200).send({users : usersResults, totalResults});
+    }
+    catch(err){
+      return res.status(400).send({message : 'Operation Failed'})
+    }
   };
 };
 

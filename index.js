@@ -4,7 +4,7 @@ import "dotenv/config";
 
 
 import { MongoClient, ServerApiVersion } from "mongodb";
-import { deleteProduct, getAllProductReadForAdmin, getAllProducts, getProductRatingCheck, getProductSearch, getSigleProductReadForAdmin,  getSignleProductRead,  patchProductRatingSubmit,  postAddNewProduct, putUpdateProduct } from "./modules/products.js";
+import { deleteProduct, getAllProductReadForAdmin, getAllProducts, getHotPicksProducts, getProductRatingCheck, getProductSearch, getReletedProducts, getSigleProductReadForAdmin,  getSignleProductRead,  patchProductRatingSubmit,  postAddNewProduct, putUpdateProduct } from "./modules/products.js";
 import {
   deleteUserByID,
   getAllAdmin,
@@ -86,6 +86,8 @@ async function run() {
     
     app.get('/products', getAllProducts(productsCollection));
     app.get('/products-search', getProductSearch(productsCollection));
+    app.get('/products-hotPicks', getHotPicksProducts(productsCollection));
+    app.get('/products-releted', getReletedProducts(productsCollection));
     app.get('/products/admin',verifyToken, isBaned, isAnyAdmin, getAllProductReadForAdmin(productsCollection));
     app.get('/products/:id', getSignleProductRead(productsCollection) );
     app.get('/products-review-check/:id', verifyToken, isBaned, getProductRatingCheck(productsCollection) );
@@ -186,7 +188,7 @@ async function run() {
 
     // for mongodb code customize
     app.get("/custome", async (req, res) => {
-      
+          
     });
 
     

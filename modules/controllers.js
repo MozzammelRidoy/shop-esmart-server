@@ -23,8 +23,9 @@ export const getAllOrderSummery = (ordersCollection, usersCollection) =>{
                 const cancelOrders = await ordersCollection.countDocuments({...matchQuery, order_status : "Cancel"}); 
                 const returnOders = await ordersCollection.countDocuments({...matchQuery, order_status : "Return"}); 
                 const totalUsers = await usersCollection.countDocuments({...matchQuery, type : "user"}); 
+                const totalTransaction = await ordersCollection.countDocuments({...matchQuery, payment_status : "VALID"})
 
-                const results = {totalOrders, pendingOrders, confirmOrders, onCuriarOrders, deliveredOrders, cancelOrders, returnOders, totalUsers}
+                const results = {totalOrders, pendingOrders, confirmOrders, onCuriarOrders, deliveredOrders, cancelOrders, returnOders, totalUsers, totalTransaction}
                 return res.status(200).send({data : results}); 
         }
         catch(err){

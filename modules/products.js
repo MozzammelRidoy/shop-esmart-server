@@ -115,12 +115,15 @@ export const getAllProducts = (productCollection) => {
 //product search with mongodb regex
 export const getProductSearch = (productCollection) => {
   return async(req, res)=> {
-    const {search, dataLoad = 10} = req.query; 
+    const {search, dataLoad = 10} = req.query;
+    
+    const searchRegex = search.split(' ').join("|"); 
 
     const query = {
       $or : [
-        {productName : {$regex : search.split(' ').join("|"), $options : 'i'}},
-        {productCode : {$regex : search.split(' ').join("|"), $options : 'i'}}
+        {productName : {$regex : searchRegex, $options : 'i'}},
+        {productCode : {$regex : searchRegex, $options : 'i'}},
+        {productTags : {$in : [new RegExp(searchRegex, 'i')]}}
       ]
     }; 
 
@@ -149,6 +152,78 @@ export const getProductSearch = (productCollection) => {
   }
 } 
 
+
+// get hot picks proudct 
+export const getHotPicksProducts = (productCollection) => {
+  return async(req, res)=> {
+
+    const {dataLoad = 10} = req.query; 
+    const query = { }; 
+
+    const projection = {
+      "_id" : 1, 
+      "productName" : 1,
+      "finalPrice" : 1,
+      "discountPercent" : 1,
+      "totalRatingsCount": 1,
+      "averageRating" : 1, 
+      "images" : 1,
+    }
+
+
+    try{
+          const productResults = await productCollection.find(query).project(projection).sort({averageRating : -1, totalRatingsCount : -1, discountPercent : -1}).limit(Number(dataLoad)).toArray(); 
+
+          const totalResult = await productCollection.countDocuments(query);
+          
+          return res.status(200).send({productResults, totalResult}); 
+    }
+    catch(err){
+      return res.status(400).send({message : "Hot Picks Unavailable"})
+    }
+
+  }
+}
+
+// releted product 
+export const getReletedProducts = (productCollection) => {
+  return async(req, res) => {
+    const {_id, category, tags, dataLoad = 10} = req.query; 
+
+    const objectId = new ObjectId(_id); 
+    const productTags = Array.isArray(tags) ? tags : tags?.split(',');
+    const productCategory = Array.isArray(category) ? category : [category];
+
+    const query = {
+      _id : {$ne : objectId},
+      $or : [
+        { productCategory: { $in: productCategory } },
+        {productTags :{$elemMatch : {$in : productTags}}}
+      ]
+    }; 
+    const projection = {
+      "_id" : 1, 
+      "productName" : 1,
+      "finalPrice" : 1,
+      "discountPercent" : 1,
+      "totalRatingsCount": 1,
+      "averageRating" : 1, 
+      "images" : 1,
+    };
+
+
+    try{  
+        const productResults = await productCollection.find(query).project(projection).limit(Number(dataLoad)).toArray()
+        const totalResult = await productCollection.countDocuments(query);
+
+      return res.status(200).send({productResults, totalResult});
+    }
+
+    catch(err){
+      return res.status(400).send({message : "Releted Product Unavailable"})
+    }
+  }
+}
 
 //read single product for public
 export const getSignleProductRead = (productCollection) => {
