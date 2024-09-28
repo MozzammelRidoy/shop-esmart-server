@@ -25,7 +25,7 @@ import { isAdminOrManager, isAnyAdmin, isBaned, isUserBlocked, limiter, verifyTo
 import { deleteCategoryOne, getAllCategories, postNewCategories, putCategoryUpdate } from "./modules/categories.js";
 import { getBannerImage, postBannerUpload, putBannerImages } from "./modules/banner.js";
 import { deleteOneCart, getAllCartsRead, postNewAddToCarts, updateAddToCarts } from "./modules/carts.js";
-import { deleteSingleOrder, getAllCanceledOrders, getAllCompleteOrders, getAllOrdersForAdmin, getALLOrdersRead, getAllPendingOrders, getAllTransaction, patchUpdateOrderStatus, postOrdersSubmit } from "./modules/orders.js";
+import { deleteSingleOrder, getAllCanceledOrders, getAllCompleteOrders, getAllOrdersForAdmin, getALLOrdersRead, getAllPendingOrders, getAllTransaction, getProcessingOrdersForAdmin, patchUpdateOrderStatus, postOrdersSubmit } from "./modules/orders.js";
 import { postCancelPayment, postFailedPayemt, postInitiatePayment, postSuccessPayment } from "./modules/payment.js";
 import { deleteCoupons, getAllAvailableCoupons, getAllCouponsForAdmin, getSingleCoupon, patchUpdateCoupons, postNewCoupons, postUserApplyCoupon, } from "./modules/coupons.js";
 import { deleteFavoriteClearAll, deleteFavoriteProduct, getAllFavoriteProduct, getCheckFavoriteProduct, postNewFavoriteProduct } from "./modules/favorite.js";
@@ -135,7 +135,7 @@ async function run() {
     app.patch("/users/logout", patchStoreUserLastLogOutTime(usersCollection));
     app.put("/usersInfo", verifyToken, isBaned, putUserInfoUpdate(usersCollection));
     app.delete("/users/:id",verifyToken, isBaned, isUserBlocked, isAdminOrManager, deleteUserByID(usersCollection));
-    app.post("/users/type", verifyToken, isBaned, getUserTypeCheck(usersCollection));
+    app.post("/users/type", verifyToken, getUserTypeCheck(usersCollection));
     app.patch('/users/type/update', verifyToken, isBaned, isUserBlocked, isAdminOrManager, patchUserTypeUpdate(usersCollection) );
     app.patch('/users/access/update', verifyToken, isBaned, isUserBlocked, isAnyAdmin, patchUserAccessUpdate(usersCollection) );
 
@@ -161,6 +161,7 @@ async function run() {
     app.get('/orders', verifyToken, isBaned, getALLOrdersRead(ordersCollection)); 
     app.get('/orders-pending', verifyToken, isBaned, isUserBlocked, getAllPendingOrders(ordersCollection)); 
     app.get('/orders-all', verifyToken, isBaned, isUserBlocked, getAllOrdersForAdmin(ordersCollection)); 
+    app.get('/orders-processing', verifyToken, isBaned, isUserBlocked, getProcessingOrdersForAdmin(ordersCollection)); 
     app.get('/orders-cancel', verifyToken, isBaned, isUserBlocked, getAllCanceledOrders(ordersCollection)); 
     app.get('/orders-complete', verifyToken, isBaned, isUserBlocked, getAllCompleteOrders(ordersCollection)); 
     app.get('/orders-transaction', verifyToken, isBaned, isUserBlocked, getAllTransaction(ordersCollection)); 

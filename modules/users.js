@@ -77,7 +77,7 @@ export const getAllAdmin = (usersCollection) => {
 
       query = {$and : [query, searchQuery]}
     }
-    
+
     try{
       const usersResults = await usersCollection
       .aggregate([
@@ -285,18 +285,42 @@ export const deleteUserByID = (usersCollection) => {
 export const getUserTypeCheck = (usersCollection) => {
   return async(req, res) => {
     const {email} = req.body;
-    
-    const query = {email : email}; 
-    
-    const user = await usersCollection.findOne(query); 
-    if(!user){
-      return res.status(401).send({message : "user not found"})
+    const tokenEmail = req.user.email; 
+    const tokenType = req.user.type;
+    const tokenIsBanned = req.user.isBaned; 
+
+
+    if(!email){
+      return res.status(401).send({message: 'Unauthorize Access'}); 
     }
 
-    const type = user.type; 
+    if(email !== tokenEmail){
+      return res.status(403).send({message : "Forbidden Access"}); 
+    }
+    
+    const query = {email : email}; 
+    try{
+          
+    const user = await usersCollection.findOne(query, {projection : {'type' : 1, 'isBaned' : 1}}); 
+    if(!user){
+      return res.status(401).send({message : "Unauthorize Access"})
+    }
+    
+    const type = user.type ; 
     const isBaned = user.isBaned; 
-   return res.status(200).send({type : type, isBaned : isBaned})
+
+    if(type !== tokenType || isBaned !== tokenIsBanned){
+      return res.status(403).send({message : "Forbidden Access"});
+    }
+
+     
+   return res.status(200).send({type : type, isBanned : isBaned})
+    }
+    catch(err){
+      return res.status(500).send({ message: 'Error fetching user data' });
+    }
   }
+  
 }
 
 // user role / type update || manager, admin, moderator or user

@@ -203,7 +203,90 @@ export const getAllOrdersForAdmin = (ordersCollection) =>{
     const {search = '', dataLoad = 10} = req.query; 
       
       
-    let query = {order_status : {$in : ['Confirm', 'Processing']}}
+    let query = {order_status : {$in : ['Confirm']}}
+
+    if(search){
+
+      if(ObjectId.isValid(search)){
+        query = {
+          ...query,
+          _id : new ObjectId(search)
+        }
+      }
+
+      else{
+        query = {
+          ...query,
+          $or : [
+          
+            {email : {$regex : search, $options : 'i'}},
+            {phone : {$regex : search, $options : 'i'}},
+            {TxID : {$regex : search, $options : 'i'}},
+            {order_status : {$regex : search, $options : 'i'}},
+          ]
+        }
+      }
+    }
+
+    const projection = {
+      '_id' : 1,
+      'createdAt' : 1,
+      'TxID' : 1,
+      'card_issuer' : 1,
+      'carts.product_id' : 1,
+      'carts.productIamge' : 1,
+      'carts.productPrice' : 1,
+      'carts.quantity' : 1,
+      'couponCode' : 1,
+      'currency' : 1,
+      'currency_amount' : 1,
+      'discount' : 1,
+      'due' : 1,
+      'email' : 1,
+      'name' : 1, 
+      'phone' : 1,
+      'payment' : 1, 
+      'paymentMethod' : 1,
+      'payment_status' : 1,
+      'shippigMethod' : 1,
+      'city' : 1,
+      'shippingValue': 1,
+      'totalPrice' : 1,
+      'finalAmount':1,
+      'totalQuantity' : 1,
+      'tran_date' : 1,
+      'note' : 1,
+      'orderStatusUpdateBy' : 1,
+      'shippingAddress' : 1,
+      'country' : 1,
+      'order_status' : 1,
+      'orderStatusHistory' : 1,
+
+    }
+    
+  
+    
+  try{
+      const ordersData = await ordersCollection.find(query, {projection}).limit(Number(dataLoad)).sort({order_status : 1}).toArray(); 
+      const totalResult = await ordersCollection.countDocuments(query);
+      return res.status(200).send({ordersData, totalResult})
+  }
+  catch(err){
+    return res.status(400).send({message : 'Failed to fetch orders'})
+  }
+
+
+
+  }
+}
+// all orders Read or load
+export const getProcessingOrdersForAdmin = (ordersCollection) =>{
+  return async(req, res)=>{
+
+    const {search = '', dataLoad = 10} = req.query; 
+      
+      
+    let query = {order_status : {$in : ['Processing', 'OnCurier']}}
 
     if(search){
 

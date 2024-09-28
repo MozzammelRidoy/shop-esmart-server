@@ -173,7 +173,7 @@ export const getExtendedSummary = (ordersCollection, productsCollection) => {
         const matchQuery = {
             createdAt : {$gte : new Date(startDate), $lte : new Date(endDate)}
         }
-
+       
         const projection = {
             '_id' : 1, 
             'images' : {$slice : 1},
@@ -189,7 +189,6 @@ export const getExtendedSummary = (ordersCollection, productsCollection) => {
         try{
 
             const topSellingProducts = await productsCollection.find({...matchQuery}, {projection}).sort({totalSold : -1}).limit(10).toArray(); 
-
             const trendingProducts = await productsCollection.find({...matchQuery}, {projection}).sort({totalRatingsCount : -1,  averageRating : -1, totalSold : -1}).limit(10).toArray(); 
 
             const lowStockAlerts = await productsCollection.find({...matchQuery, stockQuantity : {$lte : 10}}, {projection}).sort({stockQuantity : 1}).limit(15).toArray(); 
@@ -213,10 +212,14 @@ export const getExtendedSummary = (ordersCollection, productsCollection) => {
                 }
             }
 
+            
 
             const siteWideRatings = await productsCollection.aggregate([
                 {
-                    $match : {...matchQuery}
+                    $match : {...matchQuery, 
+                        totalRatingsCount: { $gt: 0 },
+                        averageRating: { $gt: 0 }
+                    }
                 },
                 {
                     $group : {
@@ -240,11 +243,11 @@ export const getExtendedSummary = (ordersCollection, productsCollection) => {
                 }
             ]).toArray(); 
 
+           
             const {totalRatingsCount = 0, siteAverageRatings = 0} = siteWideRatings[0] || {}; 
 
             const ratings = {totalRatingsCount, siteAverageRatings}; 
-
-             const results = {topSellingProducts, trendingProducts, lowStockAlerts, categoryWiseSales, ratings}; 
+             const results = {topSellingProducts, trendingProducts, lowStockAlerts, categoryWiseSales, ratings};
             return res.status(200).send({data : results}); 
           }
         catch(err){
