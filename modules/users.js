@@ -274,9 +274,36 @@ export const putUserInfoUpdate = (usersCollection) => {
 export const deleteUserByID = (usersCollection) => {
   return async (req, res) => {
     const id = req.params.id;
+    const tokenUserType = req.user.type;
+
     const query = { _id: new ObjectId(id) };
-    const result = await usersCollection.deleteOne(query);
-    res.send(result);
+    try{
+      const existingUser = await usersCollection.findOne(query); 
+
+      if(!existingUser){
+        return res.status(404).send({message : "User Not Found!"})
+      }
+
+      if(existingUser.email === req.user.email){
+        return res.status(400).send({message : 'You cannot Delete your own Data!'}); 
+      }
+
+      if((existingUser.type === 'manager') && (tokenUserType === 'admin' || tokenUserType === 'moderator')){
+        return res.status(403).send({message : 'Forbidden Access'})
+      }
+
+      if((tokenUserType === 'moderator') || (tokenUserType === 'user')){
+        return res.status(403).send({message : "Forbidden Access"}); 
+      }
+
+
+      const result = await usersCollection.deleteOne(query);
+      return  res.status(200).send(result);
+
+    }
+    catch(err){
+      return res.status(400).send({message : 'Delete Fatching Failed!'})
+    }
   };
 };
 
@@ -312,23 +339,47 @@ export const getUserTypeCheck = (usersCollection) => {
     if(type !== tokenType || isBaned !== tokenIsBanned){
       return res.status(403).send({message : "Forbidden Access"});
     }
-
-     
-   return res.status(200).send({type : type, isBanned : isBaned})
-    }
-    catch(err){
-      return res.status(500).send({ message: 'Error fetching user data' });
-    }
+    
+    
+    return res.status(200).send({type : type, isBanned : isBaned})
   }
-  
+  catch(err){
+    return res.status(500).send({ message: 'Error fetching user data' });
+  }
+}
+
 }
 
 // user role / type update || manager, admin, moderator or user
 export const patchUserTypeUpdate = (usersCollection) => {
   return async(req, res) => {
     const {email, type} = req.body; 
+    const {userCurrentCole = ''} = req.query; 
+    const tokenUserType = req.user.type;
+    const query = {email : email}; 
+
+    if(email === req.user.email){
+      return res.status(400).send({message : 'You cannot change your own role!'}); 
+    }
     
-    const query = {email : email}
+    if(userCurrentCole === 'manager' && (tokenUserType === 'admin' || tokenUserType === 'moderator')){
+      return res.status(403).send({message : 'Forbidden Access'})
+    }
+
+    if(type === 'manager' && (tokenUserType === 'admin' || tokenUserType === 'moderator')){
+      return res.status(403).send({message : 'Forbidden Access'})
+    }
+
+    if(type === 'manager' && tokenUserType !== 'manager'){
+      return res.status(403).send({message : 'Forbidden Access'})
+    }
+
+    if((type === 'manager' || type === 'admin' || type === 'moderator') && (tokenUserType === 'moderator' || tokenUserType === 'user') ){
+      return res.status(403).send({message : "Forbidden Access"}); 
+    }
+
+   
+    
     const updateDoc = {
       $set : {type : type }
     }
@@ -347,8 +398,20 @@ export const patchUserTypeUpdate = (usersCollection) => {
 export const patchUserAccessUpdate = (usersCollection) => {
   return async(req, res) => {
     const {email, isBaned} = req.body; 
-    
     const query = {email : email}
+    const tokenUserType = req.user.type;
+
+
+    if(email === req.user.email){
+      return res.status(400).send({message : 'You cannot change your own Access!'}); 
+    }
+
+    const existingUser = await usersCollection.findOne(query); 
+
+    if(existingUser.userCurrentCole === 'manager' && (tokenUserType === 'admin' || tokenUserType === 'moderator' || tokenUserType !== 'manager')){
+      return res.status(403).send({message : 'Forbidden Access'})
+    }
+    
     const updateDoc = {
       $set : {isBaned : isBaned }
     }

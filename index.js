@@ -134,10 +134,10 @@ async function run() {
     app.patch("/users/login", limiter, patchStoreUserLastLoginTime(usersCollection));
     app.patch("/users/logout", patchStoreUserLastLogOutTime(usersCollection));
     app.put("/usersInfo", verifyToken, isBaned, putUserInfoUpdate(usersCollection));
-    app.delete("/users/:id",verifyToken, isBaned, isUserBlocked, isAdminOrManager, deleteUserByID(usersCollection));
     app.post("/users/type", verifyToken, getUserTypeCheck(usersCollection));
     app.patch('/users/type/update', verifyToken, isBaned, isUserBlocked, isAdminOrManager, patchUserTypeUpdate(usersCollection) );
     app.patch('/users/access/update', verifyToken, isBaned, isUserBlocked, isAnyAdmin, patchUserAccessUpdate(usersCollection) );
+    app.delete("/users/:id",verifyToken, isBaned, isUserBlocked, isAdminOrManager, deleteUserByID(usersCollection));
 
 
     //carts releted api 
