@@ -13,6 +13,7 @@ export const verifyToken = async (req, res, next) => {
   try {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
       if (err) {
+        console.error('Token verification error:', err);
         return res.status(401).send({ message: "Unauthorized Access" });
       }
       req.user = decoded;
@@ -20,9 +21,26 @@ export const verifyToken = async (req, res, next) => {
       next();
     });
   } catch (err) {
+    console.error('Token verification error:', err);
     return res.status(400).send({ message: "Access Denied" });
   }
 };
+
+// user email verify
+export const verifyEmail = async(req, res, next) => {
+  const queryEmail = req.query.email; 
+  const tokenEmail = req.user.email; 
+
+  if(!queryEmail){
+    return res.status(403).send({message : "Forbidden Access"}); 
+  }
+
+  if(queryEmail !== tokenEmail){
+    return res.status(403).send({message : "Forbidden Access"});
+  }
+
+  next()
+}
 
 // user type Manager Check
 export const isManager = async (req, res, next) => {

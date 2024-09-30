@@ -120,7 +120,8 @@ export const postSingleUser = (usersCollection) => {
 
     const query = { email: newUser.email };
 
-    const alreadyExists = await usersCollection.findOne(query);
+    try{
+      const alreadyExists = await usersCollection.findOne(query);
 
     if (alreadyExists) {
       const alreadyExistsUserToken = {
@@ -163,6 +164,10 @@ export const postSingleUser = (usersCollection) => {
         message: "user created successfully",
         insertedId: result.insertedId,
       });
+    }
+    catch (error) {
+      return res.status(500).send({ message: "Internal server error" });
+    }
   };
 };
 
@@ -211,28 +216,25 @@ export const patchStoreUserLastLoginTime = (usersCollection) => {
 
 export const patchStoreUserLastLogOutTime = (usersCollection) => {
   return async (req, res) => {
-    const { email, lastSignOutTime } = req.body;
+    const { email  } = req.query;
 
     const query = { email: email };
 
-    const user = await usersCollection.findOne(query);
-
-    if (!user) {
-      return res.status(404).send({ message: "user not found" });
+    
+    if(email){
+      const updateDoc = {
+        $set: { lastSignOutTime: new Date(), activity: false },
+      };
+  
+      const options = { upsert: true };
+  
+      const result = await usersCollection.updateOne(query, updateDoc, options);
+      if (result.matchedCount === 0) {
+        return res.status(404).send({ message: "user not found" });
+      }
     }
 
-    const updateDoc = {
-      $set: { lastSignOutTime: lastSignOutTime, activity: false },
-    };
-
-    const options = { upsert: true };
-
-    const result = await usersCollection.updateOne(query, updateDoc, options);
-    if (result.matchedCount === 0) {
-      return res.status(404).send({ message: "user not found" });
-    }
-
-    res.clearCookie("token").send({ success: true });
+    return res.clearCookie("token").send({ success: true });
   };
 };
 

@@ -362,8 +362,8 @@ export const postAddNewProduct = (productCollection) => {
 
     newProduct.createdAt = new Date();
     (newProduct.totalRatingsCount = 0),
-      (newProduct.averageRating = 0),
-      (newProduct.ratings = []);
+    (newProduct.averageRating = 0),
+    (newProduct.ratings = []);
 
     try {
       const result = await productCollection.insertOne(newProduct);
@@ -481,7 +481,7 @@ export const patchProductRatingSubmit = (productsCollection) => {
       const totalRatingsCount = updatedRatings.length;
 
       const sumOfRatings = updatedRatings.reduce((sum, r) => sum + r.rating, 0);
-      const averageRating = (sumOfRatings / totalRatingsCount).toFixed(1);
+      const averageRating = Number((sumOfRatings / totalRatingsCount).toFixed(1));
 
       const ratingSubmitResult = await productsCollection.updateOne(
         { _id: new ObjectId(productId) },

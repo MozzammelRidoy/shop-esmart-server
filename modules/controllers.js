@@ -53,9 +53,9 @@ export const getOrderAnalysis = (ordersCollection) => {
                 {
                     $group : {
                         _id : {
-                            year : {$year : "$createdAt"},
-                            month : {$month : "$createdAt"},
-                            day : {$dayOfMonth : "$createdAt"}
+                            year : {$year :  {date: "$createdAt", timezone: "Asia/Dhaka"}},
+                            month : {$month :  {date: "$createdAt", timezone: "Asia/Dhaka"}},
+                            day : {$dayOfMonth : {date: "$createdAt", timezone: "Asia/Dhaka"}}
                         },
                         totalOrders : {$sum : 1},
                         deliveredOrders : {
@@ -184,39 +184,50 @@ export const getExtendedSummary = (ordersCollection, productsCollection) => {
             'averageRating' : 1,
             'totalRatingsCount' : 1
         }
-       
+        try{    
 
-        try{
+            const deliveredOrders = await ordersCollection.aggregate([
+                {
+                    $match : {
+                        ...matchQuery, order_status : 'Delivered'
+                    }
+                }, 
+                {
+                    $unwind : '$carts'
+                },
+                {
+                    $group : {
+                        _id : '$carts.product_id',
+                        totalQuantity : {$sum : '$carts.quantity'},
+                        productCategory: { $first: '$carts.productCategory' }
+                    }
+                }
+            ]).toArray() || []; 
 
-            const topSellingProducts = await productsCollection.find({...matchQuery}, {projection}).sort({totalSold : -1}).limit(10).toArray(); 
-            const trendingProducts = await productsCollection.find({...matchQuery}, {projection}).sort({totalRatingsCount : -1,  averageRating : -1, totalSold : -1}).limit(10).toArray(); 
+            const productIds = deliveredOrders.map(order => new ObjectId(order._id)) || [] ;
+            const topSellingProducts = await productsCollection.find({_id : {$in : productIds} }, {projection}).sort({totalSold : -1}).limit(10).toArray() || []; 
+            const trendingProducts = await productsCollection.find({_id : {$in : productIds}}, {projection}).sort({totalRatingsCount : -1,  averageRating : -1, totalSold : -1}).limit(10).toArray() || []; 
 
-            const lowStockAlerts = await productsCollection.find({...matchQuery, stockQuantity : {$lte : 10}}, {projection}).sort({stockQuantity : 1}).limit(15).toArray(); 
+            const lowStockAlerts = await productsCollection.find({stockQuantity : {$lte : 10}}, {projection}).sort({stockQuantity : 1}).limit(15).toArray() || []; 
 
-            const deliveredOrder = await ordersCollection.find({...matchQuery, order_status : 'Delivered'}).toArray(); 
 
             let categoryWiseSales = {}; 
 
-            for(const order of deliveredOrder){
-                for(const cartItem of order.carts){
-                    
-
-                    const category = cartItem.productCategory; 
+            for(const order of deliveredOrders){
+               const category = order.productCategory; 
 
                     if(categoryWiseSales[category]){
-                        categoryWiseSales[category] += cartItem.quantity; 
+                        categoryWiseSales[category] += order.totalQuantity; 
                     }
                     else{
-                        categoryWiseSales[category] = cartItem.quantity;
+                        categoryWiseSales[category] = order.totalQuantity;
                     }
-                }
+                
             }
 
-            
-
-            const siteWideRatings = await productsCollection.aggregate([
+         const siteWideRatings = await productsCollection.aggregate([
                 {
-                    $match : {...matchQuery, 
+                    $match : { _id : {$in : productIds},
                         totalRatingsCount: { $gt: 0 },
                         averageRating: { $gt: 0 }
                     }
@@ -234,17 +245,19 @@ export const getExtendedSummary = (ordersCollection, productsCollection) => {
                         totalRatingsCount : 1, 
                         siteAverageRatings : {
                             $cond : {
-                                if : {$gt : ['$totalRatingsCount',0]},
+                                if : {$gte : ['$totalRatingsCount',0]},
                                 then : {$divide : ['$totalRatingsPoint', '$totalRatingsCount']},
                                 else : 0
                             }
                         }
                     }
                 }
-            ]).toArray(); 
+            ]).toArray() || []; 
 
            
-            const {totalRatingsCount = 0, siteAverageRatings = 0} = siteWideRatings[0] || {}; 
+            const {totalRatingsCount = 0, siteAverageRatings = 0} = siteWideRatings[0] || {};
+            
+            console.log('total ratings', totalRatingsCount);
 
             const ratings = {totalRatingsCount, siteAverageRatings}; 
              const results = {topSellingProducts, trendingProducts, lowStockAlerts, categoryWiseSales, ratings};
@@ -255,3 +268,94 @@ export const getExtendedSummary = (ordersCollection, productsCollection) => {
         }
     }
 }
+
+//another method.
+// export const getExtendedSummary = (ordersCollection, productsCollection) => {
+//     return async(req, res)=>{
+//         const {startDate, endDate} = req.query ;
+//         const matchQuery = {
+//             createdAt : {$gte : new Date(startDate), $lte : new Date(endDate)}
+//         }
+       
+//         const projection = {
+//             '_id' : 1, 
+//             'images' : {$slice : 1},
+//             'totalSold' : 1,
+//             'finalPrice' : 1,
+//             'stockQuantity' : 1,
+//             'productCode' : 1,
+//             'averageRating' : 1,
+//             'totalRatingsCount' : 1
+//         }
+       
+
+
+//         try{
+
+//             const topSellingProducts = await productsCollection.find({}, {projection}).sort({totalSold : -1}).limit(10).toArray(); 
+//             const trendingProducts = await productsCollection.find({}, {projection}).sort({totalRatingsCount : -1,  averageRating : -1, totalSold : -1}).limit(10).toArray(); 
+
+//             const lowStockAlerts = await productsCollection.find({stockQuantity : {$lte : 10}}, {projection}).sort({stockQuantity : 1}).limit(15).toArray(); 
+
+//             const deliveredOrder = await ordersCollection.find({...matchQuery, order_status : 'Delivered'}).toArray(); 
+
+//             let categoryWiseSales = {}; 
+
+//             for(const order of deliveredOrder){
+//                 for(const cartItem of order.carts){
+                    
+
+//                     const category = cartItem.productCategory; 
+
+//                     if(categoryWiseSales[category]){
+//                         categoryWiseSales[category] += cartItem.quantity; 
+//                     }
+//                     else{
+//                         categoryWiseSales[category] = cartItem.quantity;
+//                     }
+//                 }
+//             }
+
+            
+
+//             const siteWideRatings = await productsCollection.aggregate([
+//                 {
+//                     $match : { 
+//                         totalRatingsCount: { $gt: 0 },
+//                         averageRating: { $gt: 0 }
+//                     }
+//                 },
+//                 {
+//                     $group : {
+//                         _id : null,
+//                         totalRatingsCount : {$sum : '$totalRatingsCount'},
+//                         totalRatingsPoint : {$sum : {$multiply : ['$averageRating', '$totalRatingsCount']}}
+//                     }
+//                 },
+//                 {
+//                     $project : {
+//                         _id : 0,
+//                         totalRatingsCount : 1, 
+//                         siteAverageRatings : {
+//                             $cond : {
+//                                 if : {$gt : ['$totalRatingsCount',0]},
+//                                 then : {$divide : ['$totalRatingsPoint', '$totalRatingsCount']},
+//                                 else : 0
+//                             }
+//                         }
+//                     }
+//                 }
+//             ]).toArray(); 
+
+           
+//             const {totalRatingsCount = 0, siteAverageRatings = 0} = siteWideRatings[0] || {}; 
+
+//             const ratings = {totalRatingsCount, siteAverageRatings}; 
+//              const results = {topSellingProducts, trendingProducts, lowStockAlerts, categoryWiseSales, ratings};
+//             return res.status(200).send({data : results}); 
+//           }
+//         catch(err){
+//             return res.status(400).send({ message: 'Error fetching Extedned Summery'})
+//         }
+//     }
+// }

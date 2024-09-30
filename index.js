@@ -21,7 +21,7 @@ import {
 import cookieParser from "cookie-parser";
 import { jwtTokenClear } from "./modules/jwt.js";
 import { deleteImageFromCloudinary, googleCaptchaVerify } from "./modules/module.js";
-import { isAdminOrManager, isAnyAdmin, isBaned, isUserBlocked, limiter, verifyToken } from "./modules/middlewares.js";
+import { isAdminOrManager, isAnyAdmin, isBaned, isUserBlocked, limiter, verifyEmail, verifyToken } from "./modules/middlewares.js";
 import { deleteCategoryOne, getAllCategories, postNewCategories, putCategoryUpdate } from "./modules/categories.js";
 import { getBannerImage, postBannerUpload, putBannerImages } from "./modules/banner.js";
 import { deleteOneCart, getAllCartsRead, postNewAddToCarts, updateAddToCarts } from "./modules/carts.js";
@@ -141,7 +141,7 @@ async function run() {
 
 
     //carts releted api 
-    app.get('/carts', verifyToken, isBaned, getAllCartsRead(cartsCollection)); 
+    app.get('/carts', verifyToken, isBaned, verifyEmail, getAllCartsRead(cartsCollection)); 
     app.post('/carts', verifyToken, isBaned, postNewAddToCarts(cartsCollection)); 
     app.patch('/carts/:id', verifyToken, isBaned, updateAddToCarts(cartsCollection)); 
     app.delete('/carts/:id', verifyToken, isBaned, deleteOneCart(cartsCollection)); 
@@ -182,6 +182,8 @@ async function run() {
     app.get('/orders-analysis', getOrderAnalysis(ordersCollection) );
     app.get('/revenue-summery', getRevenueSummery(ordersCollection, productsCollection)); 
     app.get('/extended-summary', getExtendedSummary(ordersCollection, productsCollection)); 
+
+    
     
 
 

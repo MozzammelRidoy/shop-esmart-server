@@ -6,7 +6,7 @@ export const getAllFavoriteProduct = (
   productsCollection
 ) => {
   return async (req, res) => {
-    const { dataLoad = 10, email } = req.query;
+    const { dataLoad = 10, email = req.user.email } = req.query;
 
     try {
       const favoriteProducts = await favoritesCollection
