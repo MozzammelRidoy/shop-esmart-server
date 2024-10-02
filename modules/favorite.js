@@ -6,11 +6,12 @@ export const getAllFavoriteProduct = (
   productsCollection
 ) => {
   return async (req, res) => {
-    const { dataLoad = 10, email = req.user.email } = req.query;
+    const email = req.user.email; 
+    const { dataLoad = 10 } = req.query;
 
     try {
       const favoriteProducts = await favoritesCollection
-        .find({ email })
+        .find({ email : email })
         .sort({ createdAt: -1 })
         .limit(Number(dataLoad))
         .toArray();
@@ -50,7 +51,8 @@ export const getAllFavoriteProduct = (
 //favorite product check
 export const getCheckFavoriteProduct = (favoritesCollection) => {
   return async (req, res) => {
-    const { email, product_id } = req.query;
+    const {product_id} = req.query;
+    const email = req.user.email;
 
     const query = {
       product_id,
@@ -83,7 +85,7 @@ export const postNewFavoriteProduct = (favoritesCollection) => {
       if (existingFavorite) {
         return res
           .status(400)
-          .json({ message: "Product already added to favorites" });
+          .send({ message: "Product already added to favorites" });
       }
 
       const postReults = await favoritesCollection.insertOne({
@@ -109,7 +111,7 @@ export const deleteFavoriteProduct = (favoritesCollection) => {
       const deleteResult = await favoritesCollection.deleteOne(query);
       return res.status(200).send(deleteResult);
     } catch (err) {
-      return res.status(404).send({ message: "Result Not Found!" });
+      return res.status(400).send({ message: "Deletion Feaild!" });
     }
   };
 };

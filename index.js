@@ -89,149 +89,103 @@ async function run() {
     app.get('/products-hotPicks', getHotPicksProducts(productsCollection));
     app.get('/products-releted', getReletedProducts(productsCollection));
     app.get('/products-foryou', getForYouProducts(productsCollection));
-    app.get('/products/admin',verifyToken, isBaned, isAnyAdmin, getAllProductReadForAdmin(productsCollection));
+    app.get('/products/admin',verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getAllProductReadForAdmin(productsCollection));
     app.get('/products/:id', getSignleProductRead(productsCollection) );
-    app.get('/products-review-check/:id', verifyToken, isBaned, getProductRatingCheck(productsCollection) );
-    app.get('/products/admin/:id', verifyToken, isBaned, isAnyAdmin, getSigleProductReadForAdmin(productsCollection));
-    app.post('/products/addnew', verifyToken, isBaned, isAnyAdmin, postAddNewProduct(productsCollection) );
-    app.patch('/products-review', verifyToken, isBaned, patchProductRatingSubmit(productsCollection))
-    app.put('/products/update/:id', verifyToken, isBaned, isAnyAdmin, putUpdateProduct(productsCollection));
-    app.delete('/products/delete/:id', verifyToken, isBaned, isAnyAdmin, deleteProduct(productsCollection));
+    app.get('/products-review-check/:id', verifyToken, isBaned, verifyEmail, getProductRatingCheck(productsCollection) );
+    app.get('/products/admin/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getSigleProductReadForAdmin(productsCollection));
+    app.post('/products/addnew', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, postAddNewProduct(productsCollection) );
+    app.patch('/products-review', verifyToken, isBaned, verifyEmail, patchProductRatingSubmit(productsCollection))
+    app.put('/products/update/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, putUpdateProduct(productsCollection));
+    app.delete('/products/delete/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, deleteProduct(productsCollection));
     
-
 
     //categories releted api
     app.get('/categories', getAllCategories(categoriesCollection));
-    app.post("/categories/addnew", verifyToken, isBaned, isAnyAdmin, postNewCategories(categoriesCollection) );
-    app.put('/categories/update/:id', verifyToken, isBaned, isAnyAdmin, putCategoryUpdate(categoriesCollection, productsCollection));
-    app.delete('/categories/delete/:id', verifyToken, isBaned, isAnyAdmin, deleteCategoryOne(categoriesCollection, productsCollection));
+    app.post("/categories/addnew", verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, postNewCategories(categoriesCollection) );
+    app.put('/categories/update/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, putCategoryUpdate(categoriesCollection, productsCollection));
+    app.delete('/categories/delete/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, deleteCategoryOne(categoriesCollection, productsCollection));
 
 
     //coupons releted api
-    app.get('/coupons', verifyToken, isBaned, getAllAvailableCoupons(couponsCollection) ); 
-    app.get('/coupons/admin',verifyToken, isBaned, isUserBlocked, getAllCouponsForAdmin(couponsCollection) ); 
-    app.get('/coupons/:id', verifyToken, isBaned, getSingleCoupon(couponsCollection) ); 
-    app.post('/coupons', verifyToken, isBaned, isUserBlocked, postNewCoupons(couponsCollection) );
-    app.post('/coupons-apply', verifyToken, isBaned, postUserApplyCoupon(couponsCollection));
-    app.patch('/coupons/:id', verifyToken, isBaned, isUserBlocked, patchUpdateCoupons(couponsCollection) ); 
-    app.delete('/coupons-delete/:id', verifyToken, isBaned, isUserBlocked, deleteCoupons(couponsCollection) ); 
+    app.get('/coupons', verifyToken, isBaned, verifyEmail, getAllAvailableCoupons(couponsCollection) ); 
+    app.get('/coupons/admin',verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getAllCouponsForAdmin(couponsCollection) ); 
+    app.get('/coupons/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getSingleCoupon(couponsCollection) ); 
+    app.post('/coupons', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, postNewCoupons(couponsCollection) );
+    app.post('/coupons-apply', verifyToken, isBaned, verifyEmail, postUserApplyCoupon(couponsCollection));
+    app.patch('/coupons/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, patchUpdateCoupons(couponsCollection) ); 
+    app.delete('/coupons-delete/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, deleteCoupons(couponsCollection) ); 
 
     
     //banner Releted api
     app.get('/banners', getBannerImage(bannersCollection)) ;
-    app.post('/site-settings/banners', verifyToken, isBaned, isUserBlocked, isAnyAdmin, postBannerUpload(bannersCollection)); 
-    app.put('/site-settings/banners/:id', verifyToken, isBaned, isUserBlocked, isAnyAdmin, putBannerImages(bannersCollection)); 
+    app.post('/site-settings/banners', verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, postBannerUpload(bannersCollection)); 
+    app.put('/site-settings/banners/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, putBannerImages(bannersCollection)); 
    
-    
-    
-
 
     //users releted api
-    app.get("/usersInfo", verifyToken, isBaned, getUserInformation(usersCollection));
-    app.get("/users", verifyToken, isBaned, isUserBlocked, isAnyAdmin, getAllUsers(usersCollection));
-    app.get("/users/admin", verifyToken, isBaned, isUserBlocked, isAnyAdmin, getAllAdmin(usersCollection));
+    app.get("/usersInfo", verifyToken, isBaned, verifyEmail, getUserInformation(usersCollection));
+    app.get("/users", verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getAllUsers(usersCollection));
+    app.get("/users/admin", verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, getAllAdmin(usersCollection));
     app.post("/users",limiter, postSingleUser(usersCollection));
     app.patch("/users/login", limiter, patchStoreUserLastLoginTime(usersCollection));
     app.patch("/users/logout", patchStoreUserLastLogOutTime(usersCollection));
-    app.put("/usersInfo", verifyToken, isBaned, putUserInfoUpdate(usersCollection));
-    app.post("/users/type", verifyToken, getUserTypeCheck(usersCollection));
-    app.patch('/users/type/update', verifyToken, isBaned, isUserBlocked, isAdminOrManager, patchUserTypeUpdate(usersCollection) );
-    app.patch('/users/access/update', verifyToken, isBaned, isUserBlocked, isAnyAdmin, patchUserAccessUpdate(usersCollection) );
-    app.delete("/users/:id",verifyToken, isBaned, isUserBlocked, isAdminOrManager, deleteUserByID(usersCollection));
+    app.put("/usersInfo", verifyToken, isBaned, verifyEmail, putUserInfoUpdate(usersCollection));
+    app.post("/users/type", verifyToken, isBaned, verifyEmail, getUserTypeCheck(usersCollection));
+    app.patch('/users/type/update', verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, patchUserTypeUpdate(usersCollection) );
+    app.patch('/users/access/update', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, patchUserAccessUpdate(usersCollection) );
+    app.delete("/users/:id",verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, deleteUserByID(usersCollection));
 
 
     //carts releted api 
     app.get('/carts', verifyToken, isBaned, verifyEmail, getAllCartsRead(cartsCollection)); 
-    app.post('/carts', verifyToken, isBaned, postNewAddToCarts(cartsCollection)); 
-    app.patch('/carts/:id', verifyToken, isBaned, updateAddToCarts(cartsCollection)); 
-    app.delete('/carts/:id', verifyToken, isBaned, deleteOneCart(cartsCollection)); 
+    app.post('/carts', verifyToken, isBaned, verifyEmail, postNewAddToCarts(cartsCollection)); 
+    app.patch('/carts/:id', verifyToken, isBaned, verifyEmail, updateAddToCarts(cartsCollection)); 
+    app.delete('/carts/:id', verifyToken, isBaned, verifyEmail, deleteOneCart(cartsCollection)); 
 
 
     //favorite releted api
-    app.get('/favorites', verifyToken, isBaned, getAllFavoriteProduct(favoritesCollection, productsCollection)); 
-    app.get('/favorites-check', getCheckFavoriteProduct(favoritesCollection)); 
-    app.post('/favorites', verifyToken, isBaned, postNewFavoriteProduct(favoritesCollection)); 
-    app.delete('/favorites', verifyToken, isBaned, deleteFavoriteProduct(favoritesCollection));
-    app.delete('/favorites-clear-all/:email', verifyToken, isBaned, deleteFavoriteClearAll(favoritesCollection));
+    app.get('/favorites', verifyToken, isBaned, verifyEmail, getAllFavoriteProduct(favoritesCollection, productsCollection)); 
+    app.get('/favorites-check',verifyToken, isBaned, verifyEmail, getCheckFavoriteProduct(favoritesCollection)); 
+    app.post('/favorites', verifyToken, isBaned, verifyEmail, postNewFavoriteProduct(favoritesCollection)); 
+    app.delete('/favorites', verifyToken, isBaned, verifyEmail, deleteFavoriteProduct(favoritesCollection));
+    app.delete('/favorites-clear-all/:email', verifyToken, isBaned, verifyEmail, deleteFavoriteClearAll(favoritesCollection));
 
 
-
-    
     //orders releted api 
-    app.get('/orders', verifyToken, isBaned, getALLOrdersRead(ordersCollection)); 
-    app.get('/orders-pending', verifyToken, isBaned, isUserBlocked, getAllPendingOrders(ordersCollection)); 
-    app.get('/orders-all', verifyToken, isBaned, isUserBlocked, getAllOrdersForAdmin(ordersCollection)); 
-    app.get('/orders-processing', verifyToken, isBaned, isUserBlocked, getProcessingOrdersForAdmin(ordersCollection)); 
-    app.get('/orders-cancel', verifyToken, isBaned, isUserBlocked, getAllCanceledOrders(ordersCollection)); 
-    app.get('/orders-complete', verifyToken, isBaned, isUserBlocked, getAllCompleteOrders(ordersCollection)); 
-    app.get('/orders-transaction', verifyToken, isBaned, isUserBlocked, getAllTransaction(ordersCollection)); 
-    app.post('/orders', verifyToken, isBaned, postOrdersSubmit(ordersCollection, cartsCollection, couponsCollection, client));
-    app.patch('/orders-update/:id', verifyToken, isBaned, isUserBlocked, patchUpdateOrderStatus(ordersCollection, productsCollection)); 
-    app.delete('/orders-delete/:id', verifyToken, isBaned, isUserBlocked, deleteSingleOrder(ordersCollection)); 
+    app.get('/orders', verifyToken, isBaned, verifyEmail, getALLOrdersRead(ordersCollection)); 
+    app.get('/orders-pending', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getAllPendingOrders(ordersCollection)); 
+    app.get('/orders-all', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getAllOrdersForAdmin(ordersCollection)); 
+    app.get('/orders-processing', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getProcessingOrdersForAdmin(ordersCollection)); 
+    app.get('/orders-cancel', verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, getAllCanceledOrders(ordersCollection)); 
+    app.get('/orders-complete', verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, getAllCompleteOrders(ordersCollection)); 
+    app.get('/orders-transaction', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getAllTransaction(ordersCollection)); 
+    app.post('/orders', verifyToken, isBaned, verifyEmail, postOrdersSubmit(ordersCollection, cartsCollection, couponsCollection, client));
+    app.patch('/orders-update/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, patchUpdateOrderStatus(ordersCollection, productsCollection)); 
+    app.delete('/orders-delete/:id', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, deleteSingleOrder(ordersCollection)); 
 
 
     //payment releted api
-    app.post('/initiate-payment', verifyToken, isBaned, postInitiatePayment(ordersCollection) ); 
+    app.post('/initiate-payment', verifyToken, isBaned, verifyEmail, postInitiatePayment(ordersCollection) ); 
     app.post('/success-payment', verifyToken, isBaned, postSuccessPayment(ordersCollection, cartsCollection, couponsCollection, client) );
     app.post('/cancel-payment', verifyToken, isBaned, postCancelPayment(ordersCollection) );
     app.post('/failed-payment', verifyToken, isBaned, postFailedPayemt(ordersCollection) );
 
 
     //dashboard controller releted api 
-    app.get('/orders-summery', getAllOrderSummery(ordersCollection, usersCollection)); 
-    app.get('/orders-analysis', getOrderAnalysis(ordersCollection) );
-    app.get('/revenue-summery', getRevenueSummery(ordersCollection, productsCollection)); 
-    app.get('/extended-summary', getExtendedSummary(ordersCollection, productsCollection)); 
+    app.get('/orders-summery', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getAllOrderSummery(ordersCollection, usersCollection)); 
+    app.get('/orders-analysis', verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, getOrderAnalysis(ordersCollection) );
+    app.get('/revenue-summery', verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, getRevenueSummery(ordersCollection, productsCollection)); 
+    app.get('/extended-summary', verifyToken, isBaned, verifyEmail, isUserBlocked, isAdminOrManager, getExtendedSummary(ordersCollection, productsCollection)); 
 
-    
-    
-
-
-    
-    
-
-    // for mongodb code customize
-    app.get("/custome", async (req, res) => {
-          
-    });
-
-    
 
     // captcha releted api
     app.post("/captcha/verify", googleCaptchaVerify());
 
 
     //cloudinary releted api
-    app.post('/delete-image',verifyToken, isBaned, deleteImageFromCloudinary())
-    app.post('/site-settings/banner/delete',verifyToken, isBaned, isUserBlocked, deleteImageFromCloudinary())
+    app.post('/delete-image',verifyToken, isBaned, verifyEmail, deleteImageFromCloudinary())
+    app.post('/site-settings/banner/delete',verifyToken, isBaned, verifyEmail, isUserBlocked, isAnyAdmin, deleteImageFromCloudinary())
 
-
-
-    // app.get("/product/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const query = { _id: new ObjectId(id) };
-    //   const result = await productsCollection.findOne(query);
-    //   res.send(result);
-    // });
-
-    app.get("/productCount", async (req, res) => {
-      const count = await productsCollection.estimatedDocumentCount();
-      res.send({ count });
-    });
-
-    app.get("/productsPagination", async (req, res) => {
-      const page = parseInt(req.query.page);
-      const size = parseInt(req.query.size);
-
-      // console.log(`Page ${page} and Size ${size}`)
-
-      const result = await productsCollection
-        .find()
-        .limit(size)
-        .skip(page * size)
-        .toArray();
-      res.send(result);
-    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

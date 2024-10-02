@@ -5,7 +5,7 @@ export const getBannerImage = (bannersCollection) => {
   return async (req, res) => {
     try {
       const cursor = await bannersCollection.find().toArray();
-      return res.send(cursor);
+      return res.status(200).send(cursor);
     } catch (err) {
       return res.status(500).send({ message: "Not Found", err });
     }
@@ -34,9 +34,9 @@ export const postBannerUpload = (bannersCollection) => {
           }
         );
       }
-      res.send({ insertedId: true });
+      return res.status(200).send({ insertedId: true });
     } catch (err) {
-      res.status(500).json({ message: "Server error", err });
+      return res.status(500).json({ message: "Server error", err });
     }
   };
 };
@@ -62,7 +62,7 @@ export const putBannerImages = (bannersCollection) => {
         updateDoc,
         options
       );
-      res.send(updateBanner);
+      return res.status(200).send(updateBanner);
     } catch (err) {
       return res.status(500).send({ message: "Update Failed", err });
     }

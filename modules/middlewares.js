@@ -30,6 +30,7 @@ export const verifyToken = async (req, res, next) => {
 export const verifyEmail = async(req, res, next) => {
   const queryEmail = req.query.email; 
   const tokenEmail = req.user.email; 
+  // console.log('req form interceptor', req.query.email)
 
   if(!queryEmail){
     return res.status(403).send({message : "Forbidden Access"}); 

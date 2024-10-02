@@ -10,9 +10,15 @@ export const getAllOrderSummery = (ordersCollection, usersCollection) =>{
 
         const {startDate, endDate} = req.query; 
 
-       
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);  
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); 
+
         const matchQuery = {
-            createdAt : {$gte : new Date(startDate), $lte : new Date(endDate)}
+            createdAt : {$gte : start, $lte : end}
+            
         }
          try{
                 const totalOrders = await ordersCollection.countDocuments(matchQuery); 
@@ -38,9 +44,14 @@ export const getAllOrderSummery = (ordersCollection, usersCollection) =>{
 export const getOrderAnalysis = (ordersCollection) => {
     return async(req, res)=> {
         const {startDate, endDate} = req.query; 
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);  
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); 
 
         const matchQuery = {
-            createdAt : {$gte : new Date(startDate), $lte : new Date(endDate)}
+            createdAt : {$gte : start, $lte : end}
             
         }
 
@@ -53,6 +64,7 @@ export const getOrderAnalysis = (ordersCollection) => {
                 {
                     $group : {
                         _id : {
+                            
                             year : {$year :  {date: "$createdAt", timezone: "Asia/Dhaka"}},
                             month : {$month :  {date: "$createdAt", timezone: "Asia/Dhaka"}},
                             day : {$dayOfMonth : {date: "$createdAt", timezone: "Asia/Dhaka"}}
@@ -80,15 +92,17 @@ export const getOrderAnalysis = (ordersCollection) => {
                 {
                     $project : {
                         _id : 0,
-                        date : {
-                            $concat : [
-                                {$toString : "$_id.year"},
-                                "-",
-                                {$toString : "$_id.month"},
-                                "-",
-                                {$toString : "$_id.day"},
-                                
-                            ]
+                        date: {
+                            $dateToString: {
+                                format: "%Y-%m-%d",
+                                date: {
+                                    $dateFromParts: {
+                                        year: "$_id.year",
+                                        month: "$_id.month",
+                                        day: "$_id.day"
+                                    }
+                                }
+                            }
                         },
                         totalOrders : 1,
                         deliveredOrders : 1, 
@@ -116,9 +130,16 @@ export const getRevenueSummery = (ordersCollection, productsCollection)=>{
     return async(req, res)=>{
         const {startDate, endDate} = req.query; 
 
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);  
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); 
+
         const matchQuery = {
-            createdAt : {$gte : new Date(startDate), $lte : new Date(endDate)}
-        }; 
+            createdAt : {$gte : start, $lte : end}
+            
+        }
 
         try{
                 const revenueSummery = await Promise.all([
@@ -170,8 +191,15 @@ export const getRevenueSummery = (ordersCollection, productsCollection)=>{
 export const getExtendedSummary = (ordersCollection, productsCollection) => {
     return async(req, res)=>{
         const {startDate, endDate} = req.query ;
+               const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);  
+
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); 
+
         const matchQuery = {
-            createdAt : {$gte : new Date(startDate), $lte : new Date(endDate)}
+            createdAt : {$gte : start, $lte : end}
+            
         }
        
         const projection = {
@@ -257,7 +285,6 @@ export const getExtendedSummary = (ordersCollection, productsCollection) => {
            
             const {totalRatingsCount = 0, siteAverageRatings = 0} = siteWideRatings[0] || {};
             
-            console.log('total ratings', totalRatingsCount);
 
             const ratings = {totalRatingsCount, siteAverageRatings}; 
              const results = {topSellingProducts, trendingProducts, lowStockAlerts, categoryWiseSales, ratings};

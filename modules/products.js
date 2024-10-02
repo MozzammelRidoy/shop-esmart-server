@@ -285,7 +285,7 @@ export const getSignleProductRead = (productCollection) => {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
     const options = {
-      projection: { costPrice: 0, profit: 0 },
+      projection: { costPrice: 0, profit: 0, createdAt : 0, lastEdit : 0, totalSold : 0 },
     };
 
     try {
@@ -345,7 +345,7 @@ export const getSigleProductReadForAdmin = (productCollection) => {
 
     try {
       const singleProductResult = await productCollection.findOne(query);
-      res.send(singleProductResult);
+      return res.status(200).send(singleProductResult);
     } catch (err) {
       return res.status(404).send({ message: "Product Not Found", err });
     }
@@ -400,7 +400,7 @@ export const putUpdateProduct = (productCollection) => {
         options
       );
 
-      return res.send(updateProductResult);
+      return res.status(200).send(updateProductResult);
     } catch (err) {
       return res
         .status(404)
@@ -417,7 +417,7 @@ export const deleteProduct = (productCollection) => {
 
     try {
       const deleteProduct = await productCollection.deleteOne(query);
-      res.send(deleteProduct);
+      return res.status(200).send(deleteProduct);
     } catch (err) {
       return res.status(404).send({ message: "Failed to Delete Product", err });
     }
@@ -429,35 +429,35 @@ export const getProductRatingCheck = (productCollection) => {
   return async(req, res)=> {
     const id = req.params.id; 
     const email = req.user.email; 
-
     const query = {_id : new ObjectId(id)}; 
 
     try{
 
       const product = await productCollection.findOne(query, {projection : {ratings : 1}}); 
      
-      if(!product){
-        return res.status(404).send({message : "Product Not Found"}); 
-
+      if (!product) {
+        return res.status(404).send({ message: "Product Not Found" });
       }
 
-      const hasRated = product.ratings.some(rating => rating.user === email); 
+      if(product.ratings){
+        const hasRated = product.ratings.some(rating => rating.user === email); 
 
-      if(hasRated){
-        const userReview = product.ratings.find(rating => rating.user === email); 
-
-        return res.status(200).send({ratingSubmit : false, userReview})
+        if(hasRated){
+          const userReview = product.ratings.find(rating => rating.user === email); 
+  
+          return res.status(200).send({ratingSubmit : true, userReview})
+        }
+        else{
+          return res.status(200).send({ratingSubmit : false, message : 'User can submit a rating'})
+        }
+        
       }
-      else{
-        return res.status(200).send({ratingSubmit : true, message : 'User can submit a rating'})
-      }
-
+      
+      return res.status(200).send({ratingSubmit : false, message : 'User can submit a rating'})
     }
     catch(err){
-      return res.status(500).json({ message: "Server error, please try again later." });
+      return res.status(500).send({ message: "Server error, please try again later." });
     }
-
-
   }
 }
 

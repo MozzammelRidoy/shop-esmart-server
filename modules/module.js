@@ -15,9 +15,9 @@ export const googleCaptchaVerify = () => {
       );
 
       if (response.data.success) {
-        res.send(response.data);
+       return res.status(200).send(response.data);
       } else {
-        res.status(400).send({ error: "Captcha Varification Failed!" });
+        return res.status(400).send({ error: "Captcha Varification Failed!" });
       }
     } catch (err) {
       res.status(500).send({ error: "Captcha Varification Failed!" });
@@ -46,13 +46,3 @@ export const deleteImageFromCloudinary = () => {
     }
   };
 };
-
-
-export const isUserCheck = (req, res) => {
-  const reqEmail = req.query.email; 
-  const jwtEmail = req.user.email; 
-
-  if(reqEmail !== jwtEmail){
-    return res.status(403).send({message : "Forbidden Access!"})
-  }
-}

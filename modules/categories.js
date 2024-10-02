@@ -21,9 +21,10 @@ export const postNewCategories = (categoriesCollection) => {
 
     const query = { categoryName: addNewCategory };
 
+   try{
     const alreadeyAdded = await categoriesCollection.findOne(query);
     if (alreadeyAdded) {
-      return res.send({
+      return res.status(200).send({
         success: false,
         message: "This category already added",
       });
@@ -31,7 +32,11 @@ export const postNewCategories = (categoriesCollection) => {
     const newAddCategory = await categoriesCollection.insertOne({
       categoryName: addNewCategory,
     });
-    return res.send(newAddCategory);
+    return res.status(200).send(newAddCategory);
+   }
+   catch(err){
+    return res.status(404).send({message : "Category Creation Failed!"})
+   }
   };
 };
 
@@ -75,7 +80,7 @@ export const putCategoryUpdate = (categoriesCollection, productsCollection) => {
       if (categoryUpdateresult.matchedCount === 0) {
         return res.status(404).send({ message: "Category not found" });
       }
-      return res.send(categoryUpdateresult);
+      return res.status(200).send(categoryUpdateresult);
     } catch (err) {
       return res.status(500).send({ message: "An error occurred", err });
     }
@@ -107,7 +112,7 @@ export const deleteCategoryOne = (categoriesCollection, productsCollection) => {
 
      
       const deleteResult = await categoriesCollection.deleteOne(query);
-      return res.send(deleteResult);
+      return res.status(200).send(deleteResult);
 
     } 
     catch(err){

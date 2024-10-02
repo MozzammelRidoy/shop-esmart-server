@@ -60,8 +60,8 @@ export const getAllCouponsForAdmin = (couponsCollection) => {
       query.coupon_code = { $regex: search, $options: "i" };
     }
     try {
-      const couponsResult = await couponsCollection.find(query).toArray();
-      res.send(couponsResult);
+      const couponsResult = await couponsCollection.find(query).sort({createdAt : -1}).toArray();
+      return res.status(200).send(couponsResult);
     } catch (err) {
       return res.status(404).send({ message: "Coupons Not Found!" });
     }
@@ -130,7 +130,7 @@ export const deleteCoupons = (couponsCollection) => {
 
     try {
       const deleteCoupon = await couponsCollection.deleteOne(filter);
-      return res.send(deleteCoupon);
+      return res.status(200).send(deleteCoupon);
     } catch (err) {
       return res.status(400).send({ message: "Coupon Delete Failed!" });
     }
@@ -183,7 +183,7 @@ export const postUserApplyCoupon = (couponsCollection) => {
         !coupon.specific_user.includes(email)
       ) {
         return res
-          .status(403)
+          .status(400)
           .send({ message: "This coupon is not valid for you." });
       }
 
@@ -212,13 +212,13 @@ export const postUserApplyCoupon = (couponsCollection) => {
 
       // Ensure discount doesn't exceed max_discount
 
-      if (coupon.max_discount && discountAmount > coupon.max_discount) {
+      if ((coupon.max_discount) && discountAmount > coupon.max_discount) {
         discountAmount = coupon.max_discount;
       }
 
       if(discountAmount > totalPrice){
         return res
-        .status(403)
+        .status(400)
         .send({ message: "Discount Exceeds Order Total. Add more items to Proceed!" });
       }
 

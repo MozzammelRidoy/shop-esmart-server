@@ -3,13 +3,13 @@ import { jwtTokenCreate } from "./jwt.js";
 
 export const getUserInformation = (usersCollection) => {
   return async(req, res) => {
-    const email = req.query.email; 
+    const email = req.user.email; 
 
     const query = {email : email}; 
 
     try{  
       const userInfoResult = await usersCollection.findOne(query); 
-      return res.send(userInfoResult); 
+      return res.status(200).send(userInfoResult); 
 
     }
 
@@ -147,19 +147,19 @@ export const postSingleUser = (usersCollection) => {
           secure: true,
           sameSite: "none",
         })
-        .status(201)
+        .status(200)
         .send({ message: "user already exists" });
     }
 
     const token = jwtTokenCreate(newUserToken);
     const result = await usersCollection.insertOne(newUser);
-    res
+    return res
       .cookie("token", token, {
         httpOnly: true,
         secure: true,
         sameSite: "none",
       })
-      .status(201)
+      .status(200)
       .send({
         message: "user created successfully",
         insertedId: result.insertedId,
@@ -177,7 +177,8 @@ export const patchStoreUserLastLoginTime = (usersCollection) => {
     const { email, lastSignInTime } = req.body;
     const query = { email: email };
 
-    const user = await usersCollection.findOne(query);
+    try{
+      const user = await usersCollection.findOne(query);
 
     if (!user) {
       return res.status(404).send({ message: "user not found" });
@@ -201,14 +202,18 @@ export const patchStoreUserLastLoginTime = (usersCollection) => {
     };
     const token = jwtTokenCreate(userToken);
 
-    res
+    return res
       .cookie("token", token, {
         httpOnly: true,
         secure: true,
         sameSite: "none",
       })
-      .status(201)
+      .status(200)
       .send({ success: true, result });
+    }
+    catch(err){
+      return res.status(400).send({message : 'User Loagin Failed!'})
+    }
   };
 };
 
@@ -241,7 +246,7 @@ export const patchStoreUserLastLogOutTime = (usersCollection) => {
 // user information update 
 export const putUserInfoUpdate = (usersCollection) => {
   return async(req, res) => {
-    const email = req.query.email; 
+    const email = req.user.email; 
 
     const userInfo = req.body ; 
 
@@ -261,7 +266,7 @@ export const putUserInfoUpdate = (usersCollection) => {
 
       const updateInfoResult = await usersCollection.updateOne(filter, updateDoc, options); 
 
-      return res.send(updateInfoResult)
+      return res.status(200).send(updateInfoResult)
 
     }
     catch(error){
@@ -313,20 +318,10 @@ export const deleteUserByID = (usersCollection) => {
 // user type check 
 export const getUserTypeCheck = (usersCollection) => {
   return async(req, res) => {
-    const {email} = req.body;
-    const tokenEmail = req.user.email; 
+    const email = req.user.email; 
     const tokenType = req.user.type;
     const tokenIsBanned = req.user.isBaned; 
 
-
-    if(!email){
-      return res.status(401).send({message: 'Unauthorize Access'}); 
-    }
-
-    if(email !== tokenEmail){
-      return res.status(403).send({message : "Forbidden Access"}); 
-    }
-    
     const query = {email : email}; 
     try{
           
@@ -386,12 +381,18 @@ export const patchUserTypeUpdate = (usersCollection) => {
       $set : {type : type }
     }
     const options = {upsert : true}
+    try{
+        
     const user = await usersCollection.updateOne(query, updateDoc, options)
     if(user.modifiedCount === 0){
-      return res.send({message : 'Change failed', success : false})
+      return res.status(400).send({message : 'Change failed', success : false})
     }
     if(user.modifiedCount){
-      return res.send({success : true});
+      return res.status(200).send({success : true});
+    }
+    }
+    catch(err){
+      return res.status(400).send({message : "User Type Chaange Failed!"})
     }
   }
 }
@@ -408,22 +409,27 @@ export const patchUserAccessUpdate = (usersCollection) => {
       return res.status(400).send({message : 'You cannot change your own Access!'}); 
     }
 
-    const existingUser = await usersCollection.findOne(query); 
+    try{
+      const existingUser = await usersCollection.findOne(query); 
 
-    if(existingUser.userCurrentCole === 'manager' && (tokenUserType === 'admin' || tokenUserType === 'moderator' || tokenUserType !== 'manager')){
-      return res.status(403).send({message : 'Forbidden Access'})
+      if(existingUser.userCurrentCole === 'manager' && (tokenUserType === 'admin' || tokenUserType === 'moderator' || tokenUserType !== 'manager')){
+        return res.status(403).send({message : 'Forbidden Access'})
+      }
+      
+      const updateDoc = {
+        $set : {isBaned : isBaned }
+      }
+      const options = {upsert : true}
+      const user = await usersCollection.updateOne(query, updateDoc, options)
+      if(user.modifiedCount === 0){
+        return res.send({message : 'Ban failed', success : false})
+      }
+      if(user.modifiedCount){
+        return res.send({success : true});
+      }
     }
-    
-    const updateDoc = {
-      $set : {isBaned : isBaned }
-    }
-    const options = {upsert : true}
-    const user = await usersCollection.updateOne(query, updateDoc, options)
-    if(user.modifiedCount === 0){
-      return res.send({message : 'Ban failed', success : false})
-    }
-    if(user.modifiedCount){
-      return res.send({success : true});
+    catch(err){
+      return res.status(400).send({message : "User Access Control Change Failed!"})
     }
   }
 }

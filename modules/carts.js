@@ -2,29 +2,34 @@ import { ObjectId } from "mongodb";
 
 export const getAllCartsRead = (cartsCollection) => {
   return async (req, res) => {
-    const email = req.query.email;
+    const email = req.user.email;
 
+   try{
     const cartsResults = await cartsCollection
-      .aggregate([
-        { $match: { email: email } },
-        {
-          $group: {
-            _id: null,
-            totalQuantity: { $sum: "$quantity" },
-            totalPrice: { $sum: { $multiply: ["$quantity", "$productPrice"] } },
-            carts: { $push: "$$ROOT" },
-          },
+    .aggregate([
+      { $match: { email: email } },
+      {
+        $group: {
+          _id: null,
+          totalQuantity: { $sum: "$quantity" },
+          totalPrice: { $sum: { $multiply: ["$quantity", "$productPrice"] } },
+          carts: { $push: "$$ROOT" },
         },
-      ])
-      .toArray();
+      },
+    ])
+    .toArray();
 
-    if (cartsResults.length === 0) return res.send([]);
+  if (cartsResults.length === 0) return res.send([]);
 
-    res.send({
-      totalQuantity: cartsResults[0].totalQuantity,
-      totalPrice: cartsResults[0].totalPrice,
-      carts: cartsResults[0].carts,
-    });
+  return res.status(200).send({
+    totalQuantity: cartsResults[0].totalQuantity,
+    totalPrice: cartsResults[0].totalPrice,
+    carts: cartsResults[0].carts,
+  });
+   }
+   catch(err){
+    return res.status(400).send({message : "Carts Loading Failed!"})
+   }
   };
 };
 
@@ -34,11 +39,11 @@ export const postNewAddToCarts = (cartsCollection) => {
 
    try{
        const insertCartsResult = await cartsCollection.insertOne(cartInfo);
-       return res.send(insertCartsResult);
+       return res.status(200).send(insertCartsResult);
 
    }
    catch(err){
-    return res.send({message : 'Operation Failed!'})
+    return res.status(400).send({message : 'Operation Failed!'})
    }
 
   };
@@ -57,8 +62,13 @@ export const updateAddToCarts = (cartsCollection) => {
       },
     };
 
+   try{
     const updateResult = await cartsCollection.updateOne(query, updateDoc);
-    res.send(updateResult);
+    return res.status(200).send(updateResult);
+   }
+   catch(err){
+    return res.status(400).send({message : "Cart Update Failed"})
+   }
   };
 };
 
@@ -68,7 +78,12 @@ export const deleteOneCart = (cartsCollection) => {
 
     const query = { _id: new ObjectId(id) };
 
+   try{
     const deleteResult = await cartsCollection.deleteOne(query);
-    res.send(deleteResult);
+    return res.status(200).send(deleteResult);
+   }
+   catch(err){
+    return res.status(400).send({message : "Delete Operation Failed!"})
+   }
   };
 };

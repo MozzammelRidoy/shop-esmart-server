@@ -218,7 +218,7 @@ export const postCancelPayment = (ordersCollection) => {
         }
       }
     } catch (err) {
-      return res.status(200).send({ message: "Payment Canceled!" });
+      return res.status(400).send({ message: "Payment Canceled!" });
     }
   };
 };
@@ -241,7 +241,7 @@ export const postFailedPayemt = (ordersCollection) => {
         }
       }
     } catch (err) {
-      return res.status(200).send({ message: "Payment Failed!" });
+      return res.status(400).send({ message: "Payment Failed!" });
     }
   };
 };
