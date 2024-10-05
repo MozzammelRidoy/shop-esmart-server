@@ -1,9 +1,8 @@
 ## Links to Deployment and Code
-
-- **Live Link (Client-side hosted on Firebase)**: [Shop eSmart Live](https://shopesmart-51ca8.web.app/)
-- **Server-side hosted on Vercel**: [Shop eSmart Server](https://shop-esmart-server.vercel.app/)
-- **Client-side GitHub repository**: [Shop eSmart Client](https://github.com/MozzammelRidoy/shop-esmart-client)
-- **Server-side GitHub repository**: [Shop eSmart Server](https://github.com/MozzammelRidoy/shop-esmart-server)
+- **Live Link (Client-side hosted on Firebase):** [Live Link](https://shopesmart-51ca8.web.app/dashboard)
+- **Server-side hosted on Vercel:** [Server Link](https://shop-esmart-server.vercel.app/)
+- **Client-side GitHub repository:** [Client Repo](https://github.com/MozzammelRidoy/shop-esmart-client)
+- **Server-side GitHub repository:** [Server Repo](https://github.com/MozzammelRidoy/shop-esmart-server)
 
 
 # E-commerce Project Backend Overview (Shop esmart)
@@ -113,11 +112,10 @@ Utilized for complex operations requiring multiple steps (e.g., order processing
 ---
 
 ## Links to Deployment and Code
-
-- **Live Link (Client-side hosted on Firebase)**: [Shop eSmart Live](https://shopesmart-51ca8.web.app/)
-- **Server-side hosted on Vercel**: [Shop eSmart Server](https://shop-esmart-server.vercel.app/)
-- **Client-side GitHub repository**: [Shop eSmart Client](https://github.com/MozzammelRidoy/shop-esmart-client)
-- **Server-side GitHub repository**: [Shop eSmart Server](https://github.com/MozzammelRidoy/shop-esmart-server)
+- **Live Link (Client-side hosted on Firebase):** [Live Link](https://shopesmart-51ca8.web.app/dashboard)
+- **Server-side hosted on Vercel:** [Server Link](https://shop-esmart-server.vercel.app/)
+- **Client-side GitHub repository:** [Client Repo](https://github.com/MozzammelRidoy/shop-esmart-client)
+- **Server-side GitHub repository:** [Server Repo](https://github.com/MozzammelRidoy/shop-esmart-server)
 
 ---
 
