@@ -1,5 +1,3 @@
-# Shop esmart
-
 ## Links to Deployment and Code
 
 - **Live Link (Client-side hosted on Firebase)**: [Shop eSmart Live](https://shopesmart-51ca8.web.app/)
