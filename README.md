@@ -117,7 +117,7 @@ Utilized for complex operations requiring multiple steps (e.g., order processing
 - **Server-side hosted on Vercel:** [Server Link](https://shop-esmart-server.vercel.app/)
 - **Client-side GitHub repository:** [Client Repo](https://github.com/MozzammelRidoy/shop-esmart-client)
 - **Server-side GitHub repository:** [Server Repo](https://github.com/MozzammelRidoy/shop-esmart-server)
-  - **Admin_Email :** admin123@mail.com **Password:** Password!23
+- **Admin_Email :** admin123@mail.com **Password:** Password!23
 
 ---
 
